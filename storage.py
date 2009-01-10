@@ -76,10 +76,7 @@ Artist.albums = ReferenceSet(Artist.id, Album.id)
 Artist.tracks = ReferenceSet(Artist.id, Track.id)
 
 class MetaDBStorage():
-    db_path      = None
-    database     = None
-    store        = None
-
+    
     def ExportAs(self, export_type):
         1
     
