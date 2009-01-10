@@ -3,6 +3,7 @@
 
 import re
 
+# TODO: Don't forget to handle upper case
 def lev_distance(word1, word2):
     n, m = len(word1), len(word2)
     if n > m:
@@ -19,6 +20,9 @@ def lev_distance(word1, word2):
             
     return current_row[n]
 
+
+# TODO: This is dummy function, the idea is:
+# Try to find errored written words, Then try to swap words
 def PhraseCheck(phrase1, phrase2):
      lst1, lst2 = re.split('[^\w]+', phrase1), re.split('[^\w]+', phrase2)
      if len(lst1) < len(lst2):
