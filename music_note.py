@@ -105,9 +105,9 @@ def ParseMediaFiles (dirname, filters=None):
                         print "Can't modify file " + filename
             tags = getTags(media)
             if tags:
-                test = storage.BaseMetaDBInterface(tags)
-                test.pprint()
-#            if tags: cache.AddData(tags)
+                meta_store.AddArtist(tags['artist'])
+#                test = storage.BaseMetaDBInterface(tags)
+#                test.pprint()
 
 ########################################
 
