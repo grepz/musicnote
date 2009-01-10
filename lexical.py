@@ -5,8 +5,10 @@ import re
 
 # TODO: Don't forget to handle upper case
 def lev_distance(word1, word2):
-    "Find distance between words, used to guess errors between tags
-of the same entity"
+    """Find distance between words, used to guess errors between
+    tags of the same entity
+    """
+    
     n, m = len(word1), len(word2)
     if n > m:
         word1, word2 = word2, word1
@@ -25,11 +27,17 @@ of the same entity"
 
 # TODO: This is dummy function, the idea is:
 # Try to find errored written words, Then try to swap words
+# Концерты Визбора | Визбор - Концерты
 def PhraseCheck(phrase1, phrase2):
-     lst1, lst2 = re.split('[^\w]+', phrase1), re.split('[^\w]+', phrase2)
-     if len(lst1) < len(lst2):
-         lst1 = lst1 + ['']*(len(lst2) - len(lst1))
-     elif len(lst2) < len(lst1):
-         lst2 = lst2 + ['']*(len(lst1) - len(lst2))
+    match = re.compile('[^\w]+', re.UNICODE)
+    lst1, lst2 = match.split(phrase1), match.split(phrase2)
+    print lst1, lst2
+    if len(lst1) < len(lst2):
+        lst1 = lst1 + ['']*(len(lst2) - len(lst1))
+    elif len(lst2) < len(lst1):
+        lst2 = lst2 + ['']*(len(lst1) - len(lst2))
+    res = map(lambda x,y: lev_distance(x,y), lst1, lst2)
+    print res
+    return reduce(lambda x,y: x + y, res)
 
-     return reduce(lambda x,y: x + y, map(lambda x,y: lev_distance(x,y), lst1, lst2))
+print PhraseCheck(u'Концерты Визбора', u'Концерты - Визбор')
