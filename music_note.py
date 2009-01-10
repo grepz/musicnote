@@ -51,21 +51,21 @@ def isMedia(x):
     try:
         media = mutagen.File(x)
     except:
-        print "Can't parse file '", x, "'!"
+        print 'Can\'t parse file "', x, '"!'
         media = None
     if media: return media
     
 def ID3TagsNormalized (id3):
-    id3_tags = { "TIT2" : "title", "TPE1" : "artist", "TALB" : "album" }
-    id3_info = { "artist" : u'Unknown', u'album' : u'Unknown', "title" : u'Unknown' }
+    id3_tags = { 'TIT2' : 'title', 'TPE1' : 'artist', 'TALB' : 'album' }
+    id3_info = { 'artist' : u'Unknown', u'album' : u'Unknown', 'title' : u'Unknown' }
     for tag in [k for k in id3_tags if k in id3.keys()]:
         id3_info[id3_tags[tag]] = id3[tag].text[0]
     return id3_info
     
 def ID3Tags (id3,
-             tags=["TIT2", "TPE1", "TALB"],
+             tags=['TIT2', 'TPE1', 'TALB'],
              Convert=True,
-             tags_conv={ "TIT2" : "title", "TPE1" : "artist", "TALB" : "album" }):
+             tags_conv={ 'TIT2' : 'title', 'TPE1' : 'artist', 'TALB' : 'album' }):
     result = { 'artist' : u'Unknown', 'album' : u'Unknown', 'title' : u'Unknown' }
     for tag in [k for k in id3.keys() if k in tags]:
         if Convert == True:
@@ -76,7 +76,7 @@ def ID3Tags (id3,
     return result
 
 def RepairID3Tags (media):
-    for tag in filter(lambda t: t.startswith("T"), media):
+    for tag in filter(lambda t: t.startswith('T'), media):
         frame = media[tag]
         # Skip non unicode fields:
         if isinstance(frame, mutagen.id3.TimeStampTextFrame):
@@ -88,6 +88,7 @@ def RepairID3Tags (media):
             continue
         else:
             frame.text = text
+            # Check and handle ASCII
             if min(map(isascii, text)):
                 frame.encoding = 3
             else:
@@ -116,19 +117,20 @@ def ParseMediaFiles (dirname, filters=None):
             media = isMedia(filename)
             if not media: continue
             print filename
+            # If mp3 convert tags names to ogg like
             if media.mime[0] == 'audio/mp3':
                 media = RepairID3Tags(media)
+                # Push changes to files if repair_tags is set
+                # TODO: Make as config/argument option
                 if repair_tags:
                     try:
+                        # Deprecation warning, handle this
                         media.save(filename, v1=False)
                     except IOError:
-                        print "Can't modify file " + filename
+                        print 'Can\'t modify file ' + filename
             tags = getTags(media)
-#            print tags
             if tags:
                 meta_store.AddData(tags)
-#                test = storage.BaseMetaDBInterface(tags)
-#                test.pprint()
 
 ########################################
 
@@ -137,10 +139,10 @@ meta_store = storage.MetaDBStorage()
 def main ():
     args = sys.argv[1:]
     if not args:
-        print "Be sure to set atleast one directory as argument"
+        print 'Be sure to set atleast one directory as argument'
         sys.exit(1)
     for directory in args:
         ParseMediaFiles(directory)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

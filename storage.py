@@ -6,7 +6,7 @@ import os.path
 import textwrap
 from storm.locals import *
 
-__all__ = ["Artist", "Album", "Track", "MetaDBStorage", "BaseMetaDBInterface"]
+__all__ = ['Artist', 'Album', 'Track', 'MetaDBStorage', 'BaseMetaDBInterface']
 
 DEF_STORAGE_PATH = '/tmp/'
 DEF_DB_NAME      = 'MusicNote.db'
@@ -82,16 +82,16 @@ class MetaDBStorage():
     
     def __createTables(self):
         try:
-            self.store.execute("CREATE TABLE artist "
-                               "(id INTEGER PRIMARY KEY, "
-                               "artist_name VARCHAR, artist_notes VARCHAR, description VARCHAR)")
-            self.store.execute("CREATE TABLE album "
-                               "(id INTEGER PRIMARY KEY, artist_id INTEGER, "
-                               "album_name VARCHAR, album_notes VARCHAR, date_published DATE)")
-            self.store.execute("CREATE TABLE track "
-                               "(id INTEGER PRIMARY KEY, album_id INTEGER, "
-                               "track_name VARCHAR, track_notes VARCHAR, location VARCHAR, "
-                               "length INTEGER, metatype BYTEA, style VARCHAR)")
+            self.store.execute('CREATE TABLE artist '
+                               '(id INTEGER PRIMARY KEY, '
+                               'artist_name VARCHAR, artist_notes VARCHAR, description VARCHAR)')
+            self.store.execute('CREATE TABLE album '
+                               '(id INTEGER PRIMARY KEY, artist_id INTEGER, '
+                               'album_name VARCHAR, album_notes VARCHAR, date_published DATE)')
+            self.store.execute('CREATE TABLE track '
+                               '(id INTEGER PRIMARY KEY, album_id INTEGER, '
+                               'track_name VARCHAR, track_notes VARCHAR, location VARCHAR, '
+                               'length INTEGER, metatype BYTEA, style VARCHAR)')
             self.store.commit()
         except:
             self.store.rollback()

@@ -7,15 +7,15 @@ import mutagen
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 
-MEDIACON_DIR = "/tmp/MediaCon/"
-CACHE_DIR    = "Cache"
-MUSIC_DIR    = "Music"
-VIDEO_DIR    = "Video"
-STAT_DIR     = "Stat"
+MEDIACON_DIR = '/tmp/MediaCon/'
+CACHE_DIR    = 'Cache'
+MUSIC_DIR    = 'Music'
+VIDEO_DIR    = 'Video'
+STAT_DIR     = 'Stat'
 
 def MakeDir (dir):
     if not os.path.exists(dir):
-        print "Creating dir " + dir
+        print 'Creating dir ' + dir
         os.mkdir(dir)
     elif not os.path.isdir(dir):
         raise Exception('MediaCon', 'Can\'t create directory' + dir)
@@ -36,7 +36,7 @@ class MediaCache():
             MakeDir(self.cache)
             MakeDir(self.music)
         except:
-            print "Fatal error while creating MediaCon dirs"
+            print 'Fatal error while creating MediaCon dirs'
     def __dropCache(self):
         DeleteDir (self.cache)
     def __init__(self, root=MEDIACON_DIR, cache=CACHE_DIR, music=MUSIC_DIR, drop=False):

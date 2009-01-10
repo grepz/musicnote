@@ -5,6 +5,8 @@ import re
 
 # TODO: Don't forget to handle upper case
 def lev_distance(word1, word2):
+    "Find distance between words, used to guess errors between tags
+of the same entity"
     n, m = len(word1), len(word2)
     if n > m:
         word1, word2 = word2, word1
