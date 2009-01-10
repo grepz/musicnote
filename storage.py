@@ -26,7 +26,7 @@ class BaseMetaDBInterface ():
             print('| ' + key + ':\t' + self.tags[key])
 
 class Artist(object):
-    __storm_table__ = "artist"
+    __storm_table__ = 'artist'
     id           = Int(primary=True)
     artist_name  = Unicode()
     artist_notes = Unicode()
@@ -38,7 +38,7 @@ class Artist(object):
         self.description  = description
 
 class Album(object):
-    __storm_table__ = "album"
+    __storm_table__ = 'album'
     id             = Int(primary=True)
     artist_id      = Int()
     artist         = Reference(artist_id, Artist.id)
@@ -46,13 +46,13 @@ class Album(object):
     album_notes    = Unicode()
     date_published = Date()
 
-    def __init__(self, name, notes='', published=''):
+    def __init__(self, name, notes=u'', published=None):
         self.album_name     = name
         self.album_notes    = notes
         self.date_published = published
     
 class Track(object):
-    __storm_table__ = "track"
+    __storm_table__ = 'track'
     id          = Int(primary=True)
     album_id    = Int()
     album       = Reference(album_id, Album.id)
@@ -63,7 +63,7 @@ class Track(object):
     metatype    = RawStr()
     style       = Unicode()
 
-    def __init__(self, name, length, location, metatype, notes='', style=''):
+    def __init__(self, name, length, location, metatype, notes=u'', style=u''):
         self.track_name  = name
         self.track_notes = notes
         self.location    = location
@@ -110,17 +110,38 @@ class MetaDBStorage():
         self.db_path = os.path.join(storage_path, db_name)
         self.__initStorage()
 
-    def AddArtist (self, artist_name):
-        print ('Checking name \'' + artist_name + '\'')
+    def __AddArtist (self, artist_name):
         artist = Artist(artist_name)
-        if (Store.of(artist) is self.store):
-            print "NONE"
-        else:
-            print('Adding data')
-            self.store.add(Artist(artist_name))
+        self.store.add(artist)
+        return artist
 
-#        return self.store.execute('SELECT artist.artist_name FROM artist WHERE artist.artist_name = \'' + artist + '\'')
+    def __AddAlbum (self, album_name, artist_id):
+        album = Album(album_name)
+        album.artist_id = artist_id
+        self.store.add(album)
+        return album
+
+    def __AddTrack (self, track_name, album_id):
+        track = Track(track_name, 0, u'', '')
+        track.album_id = album_id
+        self.store.add(track)
+        return track
 
     def AddData (self, tags):
-        1
+        art_name = tags['artist']
+        alb_name = tags['album']
+        trk_name = tags['title']
+        artist = self.store.find(Artist, Artist.artist_name == art_name).one()
+        if (not artist):
+            artist = self.__AddArtist(art_name)
+            self.store.flush()
+        album = self.store.find(Album, Album.album_name == alb_name, Album.artist_id == artist.id).one()
+        if (not album):
+            album = self.__AddAlbum(alb_name, artist.id)
+            self.store.flush()
+        track = self.store.find(Track, Track.track_name == trk_name, Track.album_id == album.id).one()
+        if (not track):
+            track = self.__AddTrack(trk_name, album.id)
+            self.store.flush()
+        self.store.commit()
         

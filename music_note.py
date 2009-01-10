@@ -95,7 +95,7 @@ def ParseMediaFiles (dirname, filters=None):
         for filename in map(lambda x: os.path.join(root, x), files):
             media = isMedia(filename)
             if not media: continue
-            print filename
+#            print filename
             if media.mime[0] == 'audio/mp3':
                 media = RepairID3Tags(media)
                 if repair_tags:
@@ -105,7 +105,7 @@ def ParseMediaFiles (dirname, filters=None):
                         print "Can't modify file " + filename
             tags = getTags(media)
             if tags:
-                meta_store.AddArtist(tags['artist'])
+                meta_store.AddData(tags)
 #                test = storage.BaseMetaDBInterface(tags)
 #                test.pprint()
 
