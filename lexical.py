@@ -3,6 +3,12 @@
 
 import re
 
+def cycle_list (lst, dir=1):
+    if dir == 1:
+        return [lst[len(lst) - 1]] + lst[:len(lst) - 1]
+    else:
+        return lst[1:] + [lst[0]]
+
 # TODO: Don't forget to handle upper case
 def lev_distance(word1, word2):
     """Find distance between words, used to guess errors between
@@ -31,7 +37,6 @@ def lev_distance(word1, word2):
 def PhraseCheck(phrase1, phrase2):
     match = re.compile('[^\w]+', re.UNICODE)
     lst1, lst2 = match.split(phrase1), match.split(phrase2)
-    print lst1, lst2
     if len(lst1) < len(lst2):
         lst1 = lst1 + ['']*(len(lst2) - len(lst1))
     elif len(lst2) < len(lst1):
@@ -40,4 +45,27 @@ def PhraseCheck(phrase1, phrase2):
     print res
     return reduce(lambda x,y: x + y, res)
 
-print PhraseCheck(u'Концерты Визбора', u'Концерты - Визбор')
+# Idiotizm:
+def PhraseCheck(phrase1, phrase2):
+    match = re.compile('[^\w]+', re.UNICODE)
+    lst1, lst2 = match.split(phrase1), match.split(phrase2)
+    
+    if len(lst1) < len(lst2):
+        lst1 = lst1 + ['']*(len(lst2) - len(lst1))
+    elif len(lst2) < len(lst1):
+        lst2 = lst2 + ['']*(len(lst1) - len(lst2))
+
+    res = reduce(lambda x,y: x + y,
+                 map(lambda x,y: lev_distance(x,y), lst1, lst2))
+    for x in xrange(len(lst1)):
+         lst_tmp = cycle_list(lst1)
+         res_tmp = reduce(lambda x,y: x + y,
+                          map(lambda x,y: lev_distance(x,y), lst_tmp, lst2))
+         if (res_tmp < res):
+             lst1 = lst_tmp
+    return lst1
+         
+        
+
+res = PhraseCheck(u'Концерты - тут Визбор былв', u'Концерты Визбора были тут')
+print u' '.join(res)
