@@ -26,6 +26,7 @@ import re
 import locale
 import string
 import os, os.path
+import getopt
 
 import mutagen
 from mutagen.mp3 import MP3
@@ -38,7 +39,9 @@ import storage
 # Here is code that creates simple cache for meta data
 import cache
 
-repair_tags = True
+repair_tags   = False
+repair_files  = False
+fill_database = False
 
 ENCODING = locale.getpreferredencoding()
 
@@ -54,6 +57,9 @@ def isMedia(x):
         print 'Can\'t parse file "', x, '"!'
         media = None
     if media: return media
+
+def RepairFilename (tags, filename):
+    1
     
 def ID3TagsNormalized (id3):
     id3_tags = { 'TIT2' : 'title', 'TPE1' : 'artist', 'TALB' : 'album' }
@@ -134,15 +140,44 @@ def ParseMediaFiles (dirname, filters=None):
 
 ########################################
 
-meta_store = storage.MetaDBStorage()
+meta_store = None
 
-def main ():
-    args = sys.argv[1:]
-    if not args:
-        print 'Be sure to set atleast one directory as argument'
+def Usage ():
+    print '''Usage: %s -h -r directories
+    -t - Repair tags
+    -f - Repair file names
+    -h - Show this text
+    -e - Set encoding
+    ''' % sys.argv[0]
+
+def main (argv):
+    try:
+        opts, args = getopt.getopt(argv, 'htfbe:',
+                                   ['help',
+                                    'repairtags', 'repairfiles',
+                                    'filldatabase',
+                                    'encoding='])
+    except getopt.GetoptError:
+        Usage()
         sys.exit(1)
+    for opt,arg in opts:
+        if opt in ('-h', '--help'):
+            Usage()
+            exit(0)
+        elif opt in ('-t', '--repairtags'):
+            repair_tags = True
+        elif opt in ('-f', '--repairfiles'):
+            repair_files = True
+        elif opt in ('-b', '--filldatabase'):
+            fill_database = True
+            
+    if args == []:
+        Usage()
+        print 'Be sure to set atleast one directory as argument'
+
+    meta_store = storage.MetaDBStorage()
     for directory in args:
         ParseMediaFiles(directory)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

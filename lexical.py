@@ -70,7 +70,7 @@ def total_phrase_diff (phrase1, phrase2):
     return reduce(lambda x,y: x + y, res)
 
 # TODO: Optimize, too many lists and iterations.
-def PhraseCheck (phr1, phr2):
+def transform_phrase (phr1, phr2):
     match = re.compile('[^\w]+', re.UNICODE)
     lst1, lst2 = normalize_list (match.split(phr1), match.split(phr2))
     lng = len(lst1)
@@ -99,6 +99,7 @@ def PhraseCheck (phr1, phr2):
     last = []
     for i,x in enumerate (dist):
         for j in range(lng):
+            # Add list1 word index
             x[j] += [j]
         x.sort(cmp=_dist_sort)
         for fx in last:
