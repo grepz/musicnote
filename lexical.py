@@ -19,6 +19,16 @@ def normalize_list (lst1, lst2):
 
     return lst1, lst2
 
+def transpose (m):
+    lng = len(m)
+    m_t = []
+    for j in range(lng):
+        row = []
+        for i in range(lng):
+            row.append(m[i][j])
+        m_t += [row]
+    return m_t
+
 def find_min (entity, lst):
     score = lev_distance (entity, lst[0])
 
@@ -59,13 +69,13 @@ def total_phrase_diff (phrase1, phrase2):
     
     return reduce(lambda x,y: x + y, res)
 
-# TODO: Optimize, too many lists... It's not lisp. :)
+# TODO: Optimize, too many lists and iterations.
 def PhraseCheck (phr1, phr2):
     match = re.compile('[^\w]+', re.UNICODE)
     lst1, lst2 = normalize_list (match.split(phr1), match.split(phr2))
     lng = len(lst1)
     res_lst = [''] * lng
-
+    
     def _dist_sort (x, y):
         if x[1]>y[1]:
             return 1
@@ -74,20 +84,27 @@ def PhraseCheck (phr1, phr2):
         else: 
             return -1
     
-    # For every word in list1 generate list of differences against words in
-    # list2 in form [ n, m ], where n in position of word in list2, and
-    # m is its difference
+    # For every word in list1 generate list of differences against
+    # words in list2 in form [ n, m ], where n in position of word in
+    # list2, and m is its difference
     dist = []
     for elem1 in lst1:
         dist_inner = []
         for i, elem2 in enumerate (lst2):
             dist_inner += [[i, lev_distance (elem1, elem2)]]
         dist += [dist_inner]
-
-    # Sort words, every column is related by it's index to word position
-    index = 0
-    for x in dist:
+    # Sort words, every column is related by it's index to word
+    # position
+    dist = transpose(dist)
+    last = []
+    for i,x in enumerate (dist):
+        for j in range(lng):
+            x[j] += [j]
         x.sort(cmp=_dist_sort)
-        res_lst[x[0][0]] = lst1[index]
-        index += 1
+        for fx in last:
+            # Filter already used words
+            x = filter (lambda x: x[2] != fx, x)
+        last += [x[0][2]]
+        res_lst[i] = lst1[x[0][2]]
+
     return res_lst
