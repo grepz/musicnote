@@ -59,6 +59,7 @@ def total_phrase_diff (phrase1, phrase2):
     
     return reduce(lambda x,y: x + y, res)
 
+# TODO: Optimize, too many lists... It's not lisp. :)
 def PhraseCheck (phr1, phr2):
     match = re.compile('[^\w]+', re.UNICODE)
     lst1, lst2 = normalize_list (match.split(phr1), match.split(phr2))
@@ -73,7 +74,9 @@ def PhraseCheck (phr1, phr2):
         else: 
             return -1
     
-    index = 0
+    # For every word in list1 generate list of differences against words in
+    # list2 in form [ n, m ], where n in position of word in list2, and
+    # m is its difference
     dist = []
     for elem1 in lst1:
         dist_inner = []
@@ -81,14 +84,10 @@ def PhraseCheck (phr1, phr2):
             dist_inner += [[i, lev_distance (elem1, elem2)]]
         dist += [dist_inner]
 
-    print dist
-    for row in dist:
-        row.sort(cmp=_dist_sort)
-        print row
-#        print reduce (lambda x,y: (x[1] < y[1] and [x] or [y])[0], row)
-            
-
-print PhraseCheck("abc cba bbb", "cbdsadsaaa ac bbbbbbbbb")
-
-#res = PhraseCheck(u'Труляля гулял покопчёному морю', u'пакопчёному Труляля гулял морю')
-
+    # Sort words, every column is related by it's index to word position
+    index = 0
+    for x in dist:
+        x.sort(cmp=_dist_sort)
+        res_lst[x[0][0]] = lst1[index]
+        index += 1
+    return res_lst
