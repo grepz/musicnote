@@ -1,6 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+#  storage.py -- ondisk Music data crawler with a number of features
+#
+#  Copyright 2009 Stanislav M. Ivankin <stas@concat.info>
+#
+#  This file is part of musicnote.
+#
+#  musicnote is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  musicnote is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
 import textwrap
@@ -84,13 +102,16 @@ class MetaDBStorage():
         try:
             self.store.execute('CREATE TABLE artist '
                                '(id INTEGER PRIMARY KEY, '
-                               'artist_name VARCHAR, artist_notes VARCHAR, description VARCHAR)')
+                               'artist_name VARCHAR, artist_notes VARCHAR, '
+                               'description VARCHAR)')
             self.store.execute('CREATE TABLE album '
                                '(id INTEGER PRIMARY KEY, artist_id INTEGER, '
-                               'album_name VARCHAR, album_notes VARCHAR, date_published DATE)')
+                               'album_name VARCHAR, album_notes VARCHAR, '
+                               'date_published DATE)')
             self.store.execute('CREATE TABLE track '
                                '(id INTEGER PRIMARY KEY, album_id INTEGER, '
-                               'track_name VARCHAR, track_notes VARCHAR, location VARCHAR, '
+                               'track_name VARCHAR, track_notes VARCHAR, '
+                               'location VARCHAR, '
                                'length INTEGER, metatype BYTEA, style VARCHAR)')
             self.store.commit()
         except:
@@ -132,13 +153,14 @@ class MetaDBStorage():
         if (not artist):
             artist = self.__AddArtist(art_name)
             self.store.flush()
-        album = self.store.find(Album, Album.album_name == alb_name, Album.artist_id == artist.id).one()
+        album = self.store.find(Album, Album.album_name == alb_name,
+                                Album.artist_id == artist.id).one()
         if (not album):
             album = self.__AddAlbum(alb_name, artist.id)
             self.store.flush()
-        track = self.store.find(Track, Track.track_name == trk_name, Track.album_id == album.id).one()
+        track = self.store.find(Track, Track.track_name == trk_name,
+                                Track.album_id == album.id).one()
         if (not track):
             track = self.__AddTrack(trk_name, album.id)
             self.store.flush()
         self.store.commit()
-        

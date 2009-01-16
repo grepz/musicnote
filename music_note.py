@@ -1,25 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#     music_note.py -- ondisk Music data crawler with a number of features
+#  music_note.py -- ondisk Music data crawler with a number of features
 #
-#     Copyright 2009 Stanislav M. Ivankin <stas@concat.info>
+#  Copyright 2009 Stanislav M. Ivankin <stas@concat.info>
 #
-#     This file is part of musicnote.
+#  This file is part of musicnote.
 #
-#     musicnote is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
+#  musicnote is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
-#     musicnote is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
+#  musicnote is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 #
-#     You should have received a copy of the GNU General Public License
-#     along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
-
+#  You should have received a copy of the GNU General Public License
+#  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import re
@@ -38,15 +37,38 @@ import encutils
 import storage
 # Here is code that creates simple cache for meta data
 import cache
+# Lexical utils
+import lexical
 
+from tools import *
+
+# Media storage, implemented as sqlite3 db
+meta_store = None
+
+# Command line options
 repair_tags       = False
 repair_filenames  = False
 fill_database     = False
+verbose           = False
 
 ENCODING = locale.getpreferredencoding()
 
+# Encodings used
+enc_from = 'CP1251'
+enc_to   = 'iso-8859-1'
+
+# mp3 tags to ordianry tags conversion
+id3_tags = { 'TIT2' : 'title',
+             'TPE1' : 'artist',
+             'TALB' : 'album' }
+
+# Default values for tags
+conv_tags = { 'artist' : u'Unknown',
+              'album'  : u'Unknown',
+              'title'  : u'Unknown' }
+
 ##########################################################
-        
+
 def isascii(string):
     return not string or min(string) < '\x127'
 
@@ -62,8 +84,8 @@ def RepairFilename (tags, filename):
     1
     
 def ID3TagsNormalized (id3):
-    id3_tags = { 'TIT2' : 'title', 'TPE1' : 'artist', 'TALB' : 'album' }
-    id3_info = { 'artist' : u'Unknown', u'album' : u'Unknown', 'title' : u'Unknown' }
+    global id3_tags, conv_tags
+    id3_info = conv_tags
     for tag in [k for k in id3_tags if k in id3.keys()]:
         id3_info[id3_tags[tag]] = id3[tag].text[0]
     return id3_info
@@ -71,8 +93,10 @@ def ID3TagsNormalized (id3):
 def ID3Tags (id3,
              tags=['TIT2', 'TPE1', 'TALB'],
              Convert=True,
-             tags_conv={ 'TIT2' : 'title', 'TPE1' : 'artist', 'TALB' : 'album' }):
-    result = { 'artist' : u'Unknown', 'album' : u'Unknown', 'title' : u'Unknown' }
+             tags_conv=id3_tags):
+    result = { 'artist' : u'Unknown',
+               'album' : u'Unknown',
+               'title' : u'Unknown' }
     for tag in [k for k in id3.keys() if k in tags]:
         if Convert == True:
             if tag in tags_conv:
@@ -89,7 +113,7 @@ def RepairID3Tags (media):
             continue
         try:
             # TODO: Do decode with guessing or asking user
-            text = map(lambda x: x.encode('iso-8859-1').decode('CP1251'), frame.text)
+            text = map(lambda x: x.encode(enc_to).decode(enc_from), frame.text)
         except (UnicodeError, LookupError):
             continue
         else:
@@ -103,16 +127,19 @@ def RepairID3Tags (media):
     return media
     
 def getTags (media):
+    global conv_tags
     info = None
     # There is difference in tags names across mp3 and ogg/vorbis
     if media.mime[0] == 'audio/mp3':
         info = ID3Tags (media)
     elif media.mime[0] in ['audio/vorbis', 'audio/ogg']:
-        info = { 'artist' : 'Unknown', 'album' : 'Unknown', 'title' : 'Unknown' }
-        for tag in [k for k in info.keys()  if k in media.keys()]: info[tag] = media[tag][0]
+        info = conv_tags
+        for tag in [k for k in info.keys() if k in media.keys()]:
+            info[tag] = media[tag][0]
     return info
 
 def ParseMediaFiles (dirname, filters=None):
+    global meta_store, repair_tags, verbose
     if filters:
         allowed = re.compile(filters).search
     else:
@@ -126,40 +153,45 @@ def ParseMediaFiles (dirname, filters=None):
             # If mp3 convert tags names to ogg like
             if media.mime[0] == 'audio/mp3':
                 media = RepairID3Tags(media)
-                # Push changes to files if repair_tags is set
+                # Push changes to files
                 if repair_tags:
                     try:
-                        # Deprecation warning, handle this
+                        # FIXME: Deprecation warning, handle this
                         media.save(filename, v1=False)
                     except IOError:
                         print 'Can\'t modify file ' + filename
+            # FIXME: Restructure
+            tags = getTags(media)
             if repair_filenames:
                 RepairFilename(tags, filename)
-            tags = getTags(media)
-            if tags:
+            if (tags and fill_database):
+                d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
 
-def ParseMediaDB ():
+def ParseMediaDB (store):
     1
 
 ########################################
 
-meta_store = None
-
 def Usage ():
     print '''Usage: %s -h -r directories
-    -t - Repair tags
-    -f - Repair file names
-    -h - Show this text
-    -e - Set encoding
+    -t|--repairtags   - Repair tags
+    -f|--repairfiles  - Repair file names
+    -h|--help         - Show this text
+    -b|--filldatabase - Set encoding
+    -v|--verbose      - Verbose output
     ''' % sys.argv[0]
+    exit(0)
 
 def main (argv):
+    global meta_store
+    global repair_tags, repair_filenames, fill_database
+    global verbose
+    
     try:
-        opts, args = getopt.getopt(argv, 'htfbe:',
-                                   ['help',
-                                    'repairtags', 'repairfiles',
-                                    'filldatabase',
+        opts, args = getopt.getopt(argv, 'hvtfbe:',
+                                   ['help', 'verbose', 'repairtags',
+                                    'repairfiles', 'filldatabase',
                                     'encoding='])
     except getopt.GetoptError:
         Usage()
@@ -167,17 +199,26 @@ def main (argv):
     for opt,arg in opts:
         if opt in ('-h', '--help'):
             Usage()
-            exit(0)
         elif opt in ('-t', '--repairtags'):
             repair_tags = True
         elif opt in ('-f', '--repairfiles'):
             repair_filenames = True
         elif opt in ('-b', '--filldatabase'):
             fill_database = True
-            
+        elif opt in ('-e', '--encoding'):
+            # TODO: Validate
+            enc_from = arg
+        elif opt in ('-v', '--verbose'):
+            verbose = True
+
     if args == []:
-        Usage()
         print 'Be sure to set atleast one directory as argument'
+        Usage()
+
+    d_print (verbose, 'Directories selected: %s', args)
+    d_print (verbose, '''Repair tags: %s
+Repair files: %s
+FillDB: %s''', repair_tags, repair_filenames, fill_database)
 
     meta_store = storage.MetaDBStorage()
     for directory in args:
