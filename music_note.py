@@ -39,9 +39,9 @@ import storage
 # Here is code that creates simple cache for meta data
 import cache
 
-repair_tags   = False
-repair_files  = False
-fill_database = False
+repair_tags       = False
+repair_filenames  = False
+fill_database     = False
 
 ENCODING = locale.getpreferredencoding()
 
@@ -127,16 +127,20 @@ def ParseMediaFiles (dirname, filters=None):
             if media.mime[0] == 'audio/mp3':
                 media = RepairID3Tags(media)
                 # Push changes to files if repair_tags is set
-                # TODO: Make as config/argument option
                 if repair_tags:
                     try:
                         # Deprecation warning, handle this
                         media.save(filename, v1=False)
                     except IOError:
                         print 'Can\'t modify file ' + filename
+            if repair_filenames:
+                RepairFilename(tags, filename)
             tags = getTags(media)
             if tags:
                 meta_store.AddData(tags)
+
+def ParseMediaDB ():
+    1
 
 ########################################
 
@@ -167,7 +171,7 @@ def main (argv):
         elif opt in ('-t', '--repairtags'):
             repair_tags = True
         elif opt in ('-f', '--repairfiles'):
-            repair_files = True
+            repair_filenames = True
         elif opt in ('-b', '--filldatabase'):
             fill_database = True
             
