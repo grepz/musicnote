@@ -106,3 +106,32 @@ def transform_phrase (phr1, phr2):
         res_lst[i] = lst1[x[0][2]]
 
     return res_lst
+
+rus_utf8_trans_table = {
+    u'а'  :  'a',    u'б'  :  'b',
+    u'в'  :  'v',    u'г'  :  'g',
+    u'д'  :  'd',    u'е'  :  'e',
+    u'ё'  :  'yo',   u'ж'  :  'zh',
+    u'з'  :  'z',    u'и'  :  'i',
+    u'й'  :  'j',    u'к'  :  'k',
+    u'л'  :  'l',    u'м'  :  'm',
+    u'н'  :  'n',    u'о'  :  'o',
+    u'п'  :  'p',    u'р'  :  'r',
+    u'с'  :  's',    u'т'  :  't',
+    u'у'  :  'u',    u'ф'  :  'f',
+    u'х'  :  'h',    u'ц'  :  'c',
+    u'ч'  :  'ch',   u'ш'  :  'sh',
+    u'щ'  :  'sch',  u'ь'  :  '\'',
+    u'ы'  :  'y',    u'э'  :  '`e',
+    u'ю'  :  'yu',   u'я'  :  'ya'
+    }
+
+def translit_str (string):
+    res = ''
+    for x in string:
+        x = x.lower()
+        if x in rus_utf8_trans_table:
+            res += rus_utf8_trans_table[x]
+        else:
+            res += x
+    return res

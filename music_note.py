@@ -80,11 +80,32 @@ def isMedia(x):
         media = None
     if media: return media
 
+# TODO: Check unicode with type()
+def check_tags_exists (probe, prot):
+    '''Check if tags in prototype exists in probe
+    '''
+    if [k for k in prot if k not in probe]:
+        return False
+    return True
+
+def make_filename (tags, ext, translit):
+    if translit:
+        tags = dict([(key, translit_str(val)) for (key, val) in tags.items()])
+    return ' - '.join([tags['artist'], tags['album'], tags['title']]) + ext    
+    
 def RepairFilename (tags, filename):
-    pass
+    ext = None
+    try:
+        ext = old_fname[filename.rindex('.'):]
+    except (ValueError):
+        ext = ''
+
+    return filename = make_filename (tags, ext, True)
 
 def ParseMediaDB (store):
     pass
+
+# [check(k) for k in a if k in tags]
 
 def ID3TagsNormalized (id3):
     global id3_tags, conv_tags
