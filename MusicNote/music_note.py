@@ -100,7 +100,7 @@ def RepairFilename (tags, filename):
     except (ValueError):
         ext = ''
 
-    return filename = make_filename (tags, ext, True)
+    return make_filename (tags, ext, True)
 
 def ParseMediaDB (store):
     pass
