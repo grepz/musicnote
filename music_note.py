@@ -81,8 +81,11 @@ def isMedia(x):
     if media: return media
 
 def RepairFilename (tags, filename):
-    1
-    
+    pass
+
+def ParseMediaDB (store):
+    pass
+
 def ID3TagsNormalized (id3):
     global id3_tags, conv_tags
     id3_info = conv_tags
@@ -94,9 +97,7 @@ def ID3Tags (id3,
              tags=['TIT2', 'TPE1', 'TALB'],
              Convert=True,
              tags_conv=id3_tags):
-    result = { 'artist' : u'Unknown',
-               'album' : u'Unknown',
-               'title' : u'Unknown' }
+    result = conv_tags
     for tag in [k for k in id3.keys() if k in tags]:
         if Convert == True:
             if tag in tags_conv:
@@ -112,7 +113,7 @@ def RepairID3Tags (media):
         if isinstance(frame, mutagen.id3.TimeStampTextFrame):
             continue
         try:
-            # TODO: Do decode with guessing or asking user
+            # TODO: Try to guess
             text = map(lambda x: x.encode(enc_to).decode(enc_from), frame.text)
         except (UnicodeError, LookupError):
             continue
@@ -167,9 +168,6 @@ def ParseMediaFiles (dirname, filters=None):
             if (tags and fill_database):
                 d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
-
-def ParseMediaDB (store):
-    1
 
 ########################################
 

@@ -24,9 +24,9 @@ __all__ = ['d_print', 'cycle_list', 'stretch_list', 'transpose']
 
 l_print = lambda *x:sys.stdout.write(' '.join(map(str,x)) + '\n')
 
-def d_print (verbose, format, *values):
+def d_print (verbose, fmt, *values):
     if verbose:
-        print (format) % values
+        print (fmt % values)
 
 def cycle_list (lst, dir=1):
     '''Cycle list by one element to the dir, where dir == 1 means to
