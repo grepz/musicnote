@@ -36,14 +36,16 @@ import encutils
 # Here we define routines to store parsed meta data
 import storage
 # Here is code that creates simple cache for meta data
-import cache
+from cache import *
 # Lexical utils
 import lexical
 
 from tools import *
 
 # Media storage, implemented as sqlite3 db
-meta_store = None
+meta_store  = None
+# Cache, where all files goes
+cache_store = None
 
 # Command line options
 repair_tags       = False
@@ -151,7 +153,7 @@ def getTags (media):
     return info
 
 def ParseMediaFiles (dirname, filters=None):
-    global meta_store, repair_tags, verbose
+    global meta_store, cache_store, repair_tags, verbose
     if filters:
         allowed = re.compile(filters).search
     else:
@@ -176,7 +178,7 @@ def ParseMediaFiles (dirname, filters=None):
             tags = getTags(media)
             if tags == None: continue
             if repair_filenames:
-                print RepairFilename(tags, filename).encode('utf-8')
+                cache_store.AddFile (tags, filename)
             if fill_database:
                 d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
@@ -194,7 +196,7 @@ def Usage ():
     exit(0)
 
 def main (argv):
-    global meta_store
+    global meta_store, cache_store
     global repair_tags, repair_filenames, fill_database
     global verbose
     
@@ -231,8 +233,10 @@ def main (argv):
     d_print (verbose, '''Repair tags: %s
 Repair files: %s
 FillDB: %s''', repair_tags, repair_filenames, fill_database)
-
-    meta_store = storage.MetaDBStorage()
+    if fill_database:
+        meta_store  = storage.MetaDBStorage()
+    if repair_filenames:
+        cache_store = MusicStorage("/tmp/musicdir")
     for directory in args:
         ParseMediaFiles(directory)
 

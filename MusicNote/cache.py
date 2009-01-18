@@ -21,6 +21,7 @@
 #  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, os.path
+import shutil
 
 def MakeDir (dir):
     if not os.path.exists(dir):
@@ -50,25 +51,44 @@ def DeleteDir(dir):
 
 
 class MusicStorageInterface ():
-
-    def __make_media_filepath (tags, ext, multibyte=True):
-        if multibyte == None:
+    multibyte = True
+    
+    def check_filepath (self, path):
+        try:
+            MakeDirR(path[:path.rindex('/')])
+        except (ValueError):
+            print ("Seems strange path to me: %s" % path)
+            return False
+        return True
+    
+    def __make_media_filepath (self, tags, ext):
+        if self.multibyte == False:
             tags = dict([(key, lexical.translit_str(val).title())
                          for (key, val) in tags.items()])
-            return os.path.join(target_dir, tags['artist'],
-                                tags['album'],
-                                ' - '.join([tags['artist'],
-                                            tags['album'],
-                                            tags['title']]) + ext)
+        return os.path.join(tags['artist'],
+                            tags['album'],
+                            ' - '.join([tags['artist'],
+                                        tags['album'],
+                                        tags['title']]) + ext)
     
-    def RepairFilename (tags, filename):
+    def convert_filename (self, tags, filename):
         ext = None
         try:
             ext = filename[filename.rindex('.'):]
         except (ValueError):
             ext = ''
-        return make_media_filepath (tags, ext, multibyte=True)    
+        return self.__make_media_filepath (tags, ext)
 
+    def cache_file (self, src, dst, move=False):
+        """Dummy functyion
+        """
+        if not (os.path.exists (dst) and os.path.exists (src)):
+            return
+
+        if move:
+            shutil.move (src, dst)
+        else:
+            shutil.copy(src, dst)
 
 class MusicStorage(MusicStorageInterface):
     storage_dir = None
@@ -90,8 +110,11 @@ class MusicStorage(MusicStorageInterface):
             self.__dropStorage()
         self.__initStorage()
 
-cache = MusicStorage("/tmp/musicdir")
-
+    def AddFile (self, tags, src):
+        dst = os.path.join (self.storage_dir,
+                            self.convert_filename (tags, src))
+        if self.check_filepath (dst):
+            self.cache_file(src, dst)
 
 #     def AddData (self, data):
 #         if not(os.path.exists(
