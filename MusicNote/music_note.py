@@ -236,7 +236,7 @@ FillDB: %s''', repair_tags, repair_filenames, fill_database)
     if fill_database:
         meta_store  = storage.MetaDBStorage()
     if repair_filenames:
-        cache_store = MusicStorage("/tmp/musicdir")
+        cache_store = MusicStorage("/tmp/musicdir", drop=False)
     for directory in args:
         ParseMediaFiles(directory)
 

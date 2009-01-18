@@ -23,7 +23,7 @@
 import os, os.path
 import shutil
 
-def MakeDir (dir):
+def make_dir (dir):
     if not os.path.exists(dir):
         print 'Creating dir ' + dir
         os.mkdir(dir)
@@ -31,31 +31,30 @@ def MakeDir (dir):
         raise Exception('MediaCon', 'Can\'t create directory' + dir)
     return dir
 
-def MakeDirR (dir):
+def make_dir_r (dir):
     fullpath = ''
     for d in dir.split('/'):
         fullpath = os.path.join('/', fullpath, d)
-        MakeDir (fullpath)
+        make_dir (fullpath)
 
-#def MakeDirR (dir):
-#    reduce (lambda x,y: MakeDir (os.path.join('/', x, y)), dir.split('/', 1))
+#def make_dir_r (dir):
+#    reduce (lambda x,y: make_dir (os.path.join('/', x, y)), dir.split('/', 1))
 
-def DeleteDir(dir):
+def delete_dir(dir):
     for name in os.listdir(dir):
         file = os.path.join(dir, name)
         if not os.path.islink(file) and os.path.isdir(file):
-            DeleteDir(file)
+            delete_dir(file)
         else:
             os.remove(file)
     os.rmdir(dir)
-
 
 class MusicStorageInterface ():
     multibyte = True
     
     def check_filepath (self, path):
         try:
-            MakeDirR(path[:path.rindex('/')])
+            make_dir_r(path[:path.rindex('/')])
         except (ValueError):
             print ("Seems strange path to me: %s" % path)
             return False
@@ -82,9 +81,8 @@ class MusicStorageInterface ():
     def cache_file (self, src, dst, move=False):
         """Dummy functyion
         """
-        if not (os.path.exists (dst) and os.path.exists (src)):
+        if os.path.exists (dst):
             return
-
         if move:
             shutil.move (src, dst)
         else:
@@ -95,14 +93,14 @@ class MusicStorage(MusicStorageInterface):
     
     def __initStorage(self):
         try:
-            MakeDirR (self.storage_dir)
+            make_dir_r (self.storage_dir)
         except:
             print 'Fatal error while creating MediaCon dirs'
             
     def __dropStorage(self):
         if os.path.isdir(self.storage_dir):
             print "Deleting dir ", self.storage_dir
-            DeleteDir (self.storage_dir)
+            delete_dir (self.storage_dir)
         
     def __init__(self, dir, drop=True):
         self.storage_dir = dir

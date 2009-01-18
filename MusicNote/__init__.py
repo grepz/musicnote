@@ -6,7 +6,7 @@ __version__ = '0.1-beta1'
 
 try:
     import pkg_resources
-    pkg_resources.declare_namespace('zope')
+    pkg_resources.declare_namespace('musicnote')
 except ImportError:
     print "Whoops"
 
