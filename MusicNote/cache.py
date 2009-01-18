@@ -22,22 +22,22 @@
 
 import os, os.path
 
-import mutagen
-from mutagen.mp3 import MP3
-from mutagen.easyid3 import EasyID3
-
-MEDIACON_DIR = '/tmp/MediaCon/'
-CACHE_DIR    = 'Cache'
-MUSIC_DIR    = 'Music'
-VIDEO_DIR    = 'Video'
-STAT_DIR     = 'Stat'
-
 def MakeDir (dir):
     if not os.path.exists(dir):
         print 'Creating dir ' + dir
         os.mkdir(dir)
     elif not os.path.isdir(dir):
         raise Exception('MediaCon', 'Can\'t create directory' + dir)
+    return dir
+
+def MakeDirR (dir):
+    fullpath = ''
+    for d in dir.split('/'):
+        fullpath = os.path.join('/', fullpath, d)
+        MakeDir (fullpath)
+
+#def MakeDirR (dir):
+#    reduce (lambda x,y: MakeDir (os.path.join('/', x, y)), dir.split('/', 1))
 
 def DeleteDir(dir):
     for name in os.listdir(dir):
@@ -47,32 +47,58 @@ def DeleteDir(dir):
         else:
             os.remove(file)
     os.rmdir(dir)
+
+
+class MusicStorageInterface ():
+
+    def __make_media_filepath (tags, ext, multibyte=True):
+        if multibyte == None:
+            tags = dict([(key, lexical.translit_str(val).title())
+                         for (key, val) in tags.items()])
+            return os.path.join(target_dir, tags['artist'],
+                                tags['album'],
+                                ' - '.join([tags['artist'],
+                                            tags['album'],
+                                            tags['title']]) + ext)
     
-class MediaCache():
-    def __initCache(self):
+    def RepairFilename (tags, filename):
+        ext = None
         try:
-            MakeDir(self.root)
-            MakeDir(self.cache)
-            MakeDir(self.music)
+            ext = filename[filename.rindex('.'):]
+        except (ValueError):
+            ext = ''
+        return make_media_filepath (tags, ext, multibyte=True)    
+
+
+class MusicStorage(MusicStorageInterface):
+    storage_dir = None
+    
+    def __initStorage(self):
+        try:
+            MakeDirR (self.storage_dir)
         except:
             print 'Fatal error while creating MediaCon dirs'
-    def __dropCache(self):
-        DeleteDir (self.cache)
-    def __init__(self, root=MEDIACON_DIR, cache=CACHE_DIR,
-                 music=MUSIC_DIR,
-                 drop=False):
-        self.root  = root
-        self.cache = os.path.join(root, cache)
-        self.music = os.path.join(root, cache, music)
+            
+    def __dropStorage(self):
+        if os.path.isdir(self.storage_dir):
+            print "Deleting dir ", self.storage_dir
+            DeleteDir (self.storage_dir)
+        
+    def __init__(self, dir, drop=True):
+        self.storage_dir = dir
         if drop:
-            self.__dropCache()
-        self.__initCache()
-    def AddData (self, data):
-        if not(os.path.exists(
-            os.path.join(self.music, data['artist'])) and
-               os.path.isdir(os.path.join(self.music, data['artist']))):
-            os.mkdir(os.path.join(self.music, data['artist']))
-        fh = open(os.path.join(self.music, data['artist'], data['album']), "a+")
-        fh.write(data['title'].encode('utf-8') + "\n")
-        fh.close()
+            self.__dropStorage()
+        self.__initStorage()
+
+cache = MusicStorage("/tmp/musicdir")
+
+
+#     def AddData (self, data):
+#         if not(os.path.exists(
+#             os.path.join(self.music, data['artist'])) and
+#                os.path.isdir(os.path.join(self.music, data['artist']))):
+#             os.mkdir(os.path.join(self.music, data['artist']))
+#         fh = open(os.path.join(self.music, data['artist'], data['album']), "a+")
+#         fh.write(data['title'].encode('utf-8') + "\n")
+#         fh.close()
 

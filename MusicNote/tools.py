@@ -26,7 +26,7 @@ l_print = lambda *x:sys.stdout.write(' '.join(map(str,x)) + '\n')
 
 def d_print (verbose, fmt, *values):
     if verbose:
-        print (u'Debug: ' + fmt % values)
+        print ('Debug: ' + fmt % values)
 
 def cycle_list (lst, dir=1):
     '''Cycle list by one element to the dir, where dir == 1 means to

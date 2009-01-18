@@ -57,6 +57,10 @@ ENCODING = locale.getpreferredencoding()
 enc_from = 'CP1251'
 enc_to   = 'iso-8859-1'
 
+# Target directory
+# TODO: Make platform independent all path handling
+target_dir = '/tmp/music'
+
 # mp3 tags to ordianry tags conversion
 id3_tags = { 'TIT2' : 'title',
              'TPE1' : 'artist',
@@ -87,20 +91,6 @@ def check_tags_exists (probe, prot):
     if [k for k in prot if k not in probe]:
         return False
     return True
-
-def make_filename (tags, ext, translit):
-    if translit:
-        tags = dict([(key, lexical.translit_str(val).title())
-                     for (key, val) in tags.items()])
-    return ' - '.join([tags['artist'], tags['album'], tags['title']]) + ext    
-    
-def RepairFilename (tags, filename):
-    ext = None
-    try:
-        ext = filename[filename.rindex('.'):]
-    except (ValueError):
-        ext = ''
-    return make_filename (tags, ext, True)
 
 def ParseMediaDB (store):
     pass
@@ -186,7 +176,7 @@ def ParseMediaFiles (dirname, filters=None):
             tags = getTags(media)
             if tags == None: continue
             if repair_filenames:
-                d_print (verbose, '%s', RepairFilename(tags, filename))
+                print RepairFilename(tags, filename).encode('utf-8')
             if fill_database:
                 d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
@@ -209,10 +199,10 @@ def main (argv):
     global verbose
     
     try:
-        opts, args = getopt.getopt(argv, 'hvtfbe:',
+        opts, args = getopt.getopt(argv, 'hvtfbd:e:',
                                    ['help', 'verbose', 'repairtags',
                                     'repairfiles', 'filldatabase',
-                                    'encoding='])
+                                    'targetdir=', 'encoding='])
     except getopt.GetoptError:
         Usage()
         sys.exit(1)
@@ -228,6 +218,8 @@ def main (argv):
         elif opt in ('-e', '--encoding'):
             # TODO: Validate
             enc_from = arg
+        elif opt in ('-d', '--targetdir'):
+            target_dir = arg
         elif opt in ('-v', '--verbose'):
             verbose = True
 
