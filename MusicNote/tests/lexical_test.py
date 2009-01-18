@@ -9,19 +9,22 @@ import unittest
 from lexical import *
 
 class WordCheck (unittest.TestCase):
-    diff_cases = ((2,  ('Test',      'eTst')),
-                  (2,  (u'Маголёт',  u'Могалёт')),
-                  (1,  (u'Корова',   u'Карова')),
-                  (3,  ('WakidzasI', 'Waki Dzasi')),
-                  (18, ('i18n',      'internationalization')),
-                  (3,  ('stubburn',  'tsuburn')))
+    diff_cases = (((2, 2),  ('Test',      'eTst')),
+                  ((3, 2),  (u'маголёт',  u'Могалёт')),
+                  ((1, 1),  (u'Корова',   u'Карова')),
+                  ((3, 1),  ('WakidzasI', 'Waki Dzasi')),
+                  ((19, 18), ('I18n',      'internationalization')),
+                  ((3, 3),  ('stubburn',  'tsuburn')))
     
     def testWordDiffs (self):
         print "Running words diff test"
         for diff, words in self.diff_cases:
-            print words, lev_distance(words[0], words[1])
-            self.assertEqual(diff, lev_distance(words[0], words[1]))
-
+            print (words,
+                   lev_distance(words[0], words[1]),
+                   lev_distance(words[0], words[1]))
+            self.assertEqual(diff[0], lev_distance(words[0], words[1]))
+            self.assertEqual(diff[1], lev_distance(words[0], words[1],
+                                                   ignorecase=True))
 
 class PhraseCheck (unittest.TestCase):
     pos_cases = ((u'фсё врёт униттест этат ваш',

@@ -1,0 +1,4 @@
+* MusicNote [0/3]
+  - [ ] Give user ability to make changes to DB, then dump all on disk
+  - [ ] Handle unicode carefully
+  - [ ] Make more friendly on encodings different from CP1251, KOI8-R

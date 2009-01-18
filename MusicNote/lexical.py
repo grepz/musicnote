@@ -37,11 +37,12 @@ def find_min (entity, lst):
 
     return _find_min (entity, lst[1:], score)
 
-# TODO: Don't forget to handle upper case
-def lev_distance(word1, word2):
+def lev_distance(word1, word2, ignorecase=False):
     '''Find distance between words, used to guess errors between
     tags of the same entity
     '''
+    if ignorecase:
+        word1, word2 = word1.upper(), word2.upper()
     n, m = len(word1), len(word2)
     if n > m:
         word1, word2 = word2, word1
