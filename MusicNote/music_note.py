@@ -90,16 +90,16 @@ def check_tags_exists (probe, prot):
 
 def make_filename (tags, ext, translit):
     if translit:
-        tags = dict([(key, translit_str(val)) for (key, val) in tags.items()])
+        tags = dict([(key, lexical.translit_str(val).title())
+                     for (key, val) in tags.items()])
     return ' - '.join([tags['artist'], tags['album'], tags['title']]) + ext    
     
 def RepairFilename (tags, filename):
     ext = None
     try:
-        ext = old_fname[filename.rindex('.'):]
+        ext = filename[filename.rindex('.'):]
     except (ValueError):
         ext = ''
-
     return make_filename (tags, ext, True)
 
 def ParseMediaDB (store):
@@ -184,9 +184,10 @@ def ParseMediaFiles (dirname, filters=None):
                         print 'Can\'t modify file ' + filename
             # FIXME: Restructure
             tags = getTags(media)
+            if tags == None: continue
             if repair_filenames:
-                RepairFilename(tags, filename)
-            if (tags and fill_database):
+                d_print (verbose, '%s', RepairFilename(tags, filename))
+            if fill_database:
                 d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
 
