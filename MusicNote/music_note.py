@@ -53,6 +53,8 @@ repair_filenames  = False
 fill_database     = False
 verbose           = False
 
+interface = None
+
 ENCODING = locale.getpreferredencoding()
 
 # Encodings used
