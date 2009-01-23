@@ -1,9 +1,29 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pygtk
-pygtk.require('2.0')
+#  gtk_interface.py -- ondisk Music data crawler with a number of features
+#
+#  Copyright 2009 Stanislav M. Ivankin <stas@concat.info>
+#
+#  This file is part of musicnote.
+#
+#  musicnote is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  musicnote is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
+
+import gobject
 import gtk
+import pygtk
+
+pygtk.require('2.0')
 
 # just tests
 
@@ -21,15 +41,81 @@ import gtk
 #       Source can get "drag-data-delete" signal
 #     * Drag-and-drop procedure done. Source can receive "drag-end" signal.
 
-drop_yes = ("drop_yes", gtk.TARGET_SAME_WIDGET, 0)
-drop_no = ("drop_no", gtk.TARGET_SAME_WIDGET, 0)
+class MNTreeView:
+    drop_yes = ('drop_yes', gtk.TARGET_SAME_WIDGET, 0)
+    drop_no = ('drop_no', gtk.TARGET_SAME_WIDGET, 0)
 
+    def checkDNDSanity (self, model, source, dest, drop_pos):
+        source_path = model.get_path(source)
+        target_path = model.get_path(dest)
+        target_len, source_len = len(target_path), len(source_path)
 
-class MNView(gtk.VBox):
+        # If i am trying to drop element to the child node with the
+        # same parent
+        if target_path[0] == source_path[0]:
+            return False
+        # We can't drop elements into child nodes
+        if target_len > 1 and \
+               (drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_BEFORE or \
+                drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_AFTER):
+            return False
+        # Root nodes can't be simply reordered
+        if (target_len == 1 and source_len == 1) and \
+               drop_pos == gtk.TREE_VIEW_DROP_BEFORE or \
+               drop_pos == gtk.TREE_VIEW_DROP_AFTER:
+            return False
+        
+        return True
 
-    def __init__ (self):
+    def __copy_data ():
         pass
+    
+    # TODO: Handle copy and move, when source root node copied
+    # after/before childs of another root node, just copy childs of
+    # source node
+    def __onDragMotion (self, treeview, drag_context,
+                        x, y, evtime):
+        try:
+            dest_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
+            model, source = treeview.get_selection().get_selected()
+            dest = model.get_iter(dest_path)
+        except:
+            return
+        
+        if self.checkDNDSanity(model, source, dest, drop_pos):
+            treeview.enable_model_drag_dest (
+                [self.drop_yes], gtk.gdk.ACTION_MOVE)
+        else:
+            treeview.enable_model_drag_dest (
+                [self.drop_no], gtk.gdk.ACTION_MOVE)
+    
+    def __onDragDataReceived (self, treeview, drag_context, x, y,
+                              selection_data, info, evtime):
+        target_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
+        model, source = treeview.get_selection().get_selected()
+        dest = model.get_iter(target_path)
+        
+        if self.checkDNDSanity (model, source, dest, drop_pos):
+            drag_context.finish(True, True, evtime)
+        else:
+            drag_context.finish(False, False, evtime)
 
+    def __setup_dnd_rules (self, treeview):
+        treeview.enable_model_drag_source (
+            gtk.gdk.BUTTON1_MASK, [self.drop_yes],
+            gtk.gdk.ACTION_MOVE)
+        treeview.enable_model_drag_dest (
+            [self.drop_yes], gtk.gdk.ACTION_MOVE)
+
+        # Connect drag signal, they will check if we may put dragged
+        # widget, or not
+        treeview.connect ('drag-data-received',
+                          self.__onDragDataReceived)
+        treeview.connect ('drag-motion',
+                          self.__onDragMotion)
+
+    def __init__ (self, treeview):
+        self.__setup_dnd_rules(treeview)
 
 class MNGtkMain:
     
@@ -46,25 +132,6 @@ class MNGtkMain:
 
         self.window.show()
 
-    def checkSanity(self, model, source, target):
-        source_path = model.get_path(source)
-        target_path = model.get_path(target)
-        print len(target_path)
-        if target_path[0:len(source_path)] == source_path:
-            return False
-        else:
-            return True
-
-    def onDragDataReceived(self, treeview, drag_context, x, y,
-                           selection_data, info, eventtime):
-        res = treeview.get_dest_row_at_pos(x, y)
-        if not res:
-            return
-        if len(res) > 1:
-            drag_context.finish(False, False, eventtime)
-        else:
-            drag_context.finish(True, True, eventtime)
-
         
     def test(self):
         self.categories = gtk.TreeStore(str)
@@ -73,10 +140,7 @@ class MNGtkMain:
             cat = self.categories.append(None, ['Row %d' % category])
             for element in range (5):
                 self.categories.append(cat, ['Child row %d' % element])
-
         self.treeview = gtk.TreeView(self.categories)
-#        self.treeview.connect('drag-data-received', self.__drag_control)
-        self.treeview.connect("drag-data-received", self.onDragDataReceived)
         
         self.tvcolumn = gtk.TreeViewColumn('Names')
         self.treeview.append_column(self.tvcolumn)
@@ -84,20 +148,19 @@ class MNGtkMain:
         self.tvcolumn.pack_start(self.cell, True)
         self.tvcolumn.add_attribute(self.cell, 'text', 0)
 
-        self.treeview.set_search_column(0)
-        self.tvcolumn.set_sort_column_id(0)
-        
-        self.treeview.set_reorderable(True)
+#        self.treeview.set_search_column(0)
+#        self.tvcolumn.set_sort_column_id(0)
+#        self.treeview.set_reorderable(True)
         
         self.window.add(self.treeview)
+
+        self.mntv = MNTreeView (self.treeview)
+        
         self.window.show_all()
         
 
     def main(self):
         self.test()
-
-        
-        
         gtk.main()
 
 
