@@ -5,6 +5,8 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
+# just tests
+
 # So a typical drag-and-drop cycle would look as follows:
 #     * Drag begins. Source can get "drag-begin" signal.
 #       Can set up drag icon, etc.
