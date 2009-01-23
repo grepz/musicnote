@@ -21,7 +21,6 @@
 #  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
 import re, sys
-
 from tools import *
 
 def find_min (entity, lst):
@@ -62,15 +61,18 @@ def lev_distance(word1, word2, ignorecase=False):
 
 def total_phrase_diff (phrase1, phrase2):
     match = re.compile('[^\w]+', re.UNICODE)
-    lst1, lst2 = stretch_list (match.split(phrase1), match.split(phrase2))
+    lst1, lst2 = stretch_list (match.split(phrase1),
+                               match.split(phrase2))
     
     return reduce(lambda x,y: x + y,
-                  map(lambda x,y: lev_distance(x,y), lst1, lst2))
+                  map(lambda x,y: lev_distance(x,y),
+                      lst1, lst2))
 
 # TODO: Optimize, too many lists and iterations.
 def transform_phrase (phr1, phr2):
     match = re.compile('[^\w]+', re.UNICODE)
-    lst1, lst2 = stretch_list (match.split(phr1), match.split(phr2))
+    lst1, lst2 = stretch_list (match.split(phr1),
+                               match.split(phr2))
     lng = len(lst1)
     res_lst = [''] * lng
 

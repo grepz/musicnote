@@ -1,4 +1,9 @@
-* MusicNote [0/3]
-  - [ ] Give user ability to make changes to DB, then dump all on disk
+* Misc [0%]
   - [ ] Handle unicode carefully
   - [ ] Make more friendly on encodings different from CP1251, KOI8-R
+
+* Mechanism [0%]
+  1. [ ] Gather info from choosen directories into DB
+  2. [ ] Show this DB using curses interface
+  3. [ ] Repair tags in DB if choosen to do so
+  4. [ ] Copy files to storage directories fixing filenames if needed
