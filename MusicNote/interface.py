@@ -6,6 +6,8 @@ import sys
 import urwid.raw_display
 import urwid
 
+# Just tests
+
 class MNWindow(object):
     x0 = y0 = x1 = y1 = None
     
