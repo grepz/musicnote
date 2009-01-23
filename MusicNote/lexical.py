@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 #  lexical.py -- ondisk Music data crawler with a number of features

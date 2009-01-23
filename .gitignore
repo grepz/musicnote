@@ -4,3 +4,4 @@ tmp/
 build/
 /MusicNote/test.py
 /MusicNote/test2.py
+/MusicNote/gtk_interface.py
