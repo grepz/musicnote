@@ -19,13 +19,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
-import gobject
-import gtk
-import pygtk
+try:
+    import pygtk
+    pygtk.require('2.0')
+except:
+    pass
 
-## Test
-
-pygtk.require('2.0')
+# TODO: Handle what wasn't found
+try:
+    import gobject
+    import gtk
+    import gtk.glade
+except:
+    print "Can't find python gtk bindings."
+    exit(1)
 
 # So a typical drag-and-drop cycle would look as follows:
 #     * Drag begins. Source can get "drag-begin" signal.
@@ -150,7 +157,7 @@ class MNTreeView:
 
     def __init__ (self, treeview):
         self.__setup_dnd_rules(treeview)
-
+        
 class MNGtkMain:
     
     def destroy(self, widget, data=None):
@@ -158,12 +165,9 @@ class MNGtkMain:
 
     def __init__ (self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-
         self.window.set_title("MusicNote")
         self.window.set_size_request(700, 500)
-
         self.window.connect("destroy", self.destroy)
-
         self.window.show()
 
         
@@ -197,7 +201,97 @@ class MNGtkMain:
         self.test()
         gtk.main()
 
+class MNTreeStore (gtk.TreeStore):
+    names_list = None
+    
+    def __init__ (self, names_list):
+        # Chain costructor
+        gtk.TreeStore.__init__(self, str)
+        self.names_list = names_list
+        i = 0
+        for name in names_list:
+            self.append(None, ['%d - %s' % (i, name)])
+            i += 1
+
+    def get_raw_list (self):
+        return self.names_list
+
+###############################################################################
+        
+class MNGUIError:
+    def __init__ (self, msg):
+        print msg
+
+class MNGUI:
+    glade = 'mn_main.glade'
+    winname = 'MNWindow'
+    toolbarname = 'MNToolBar'
+    
+    choosen_names_name = 'MNChoosenNamesView'
+    sub_names_name     = 'MNSubNamesView'
+
+    def destroy (self, widget, data=None):
+        print 'destroy event'
+        gtk.main_quit()
+
+    def __init_views (self):
+        self.choosen_names_view = self.wTree.get_widget (
+            self.choosen_names_name)
+        self.sub_names_view = self.wTree.get_widget (
+            self.sub_names_name)
+
+        def set_columns (view, name):
+            tvcolumn = gtk.TreeViewColumn(name)
+            view.append_column(tvcolumn)
+            cell = gtk.CellRendererText()
+            tvcolumn.pack_start(cell, True)
+            tvcolumn.add_attribute(cell, 'text', 0)
+
+        # Choosen names
+        set_columns (self.choosen_names_view, 'Choosen')
+        # Sub names
+        set_columns (self.sub_names_view, 'Names')
+
+    def __init_toolbar (self):
+        self.toolbar = self.wTree.get_widget (self.toolbarname)
+
+    def __init_storage (self):
+        pass
+        
+    def __init__ (self):
+        self.wTree = gtk.glade.XML (self.glade)
+        self.window = self.wTree.get_widget (self.winname)
+        assert(self.window)
+        self.cb = {
+            'handle_win_destroy' : self.destroy,
+            'handle_toolbar_quit' : self.destroy,
+        }
+        self.wTree.signal_autoconnect (self.cb)
+        
+        self.__init_toolbar ()
+        
+        self.__init_views ()
+        self.fill_views ({'name1' : ['value1', 'value2'],
+                          'name2' : ['value1', 'value2', 'value3'],
+                          'name3' : ['value1', 'value2', 'value3'],
+                          'name4' : ['value1', 'value2', 'value3']
+                          })
+        
+        self.window.show_all ()
+
+        self.__init_storage ()
+            
+        return
+
+    def fill_views (self, data):
+        self.choosen_names_store = MNTreeStore (data.keys ())
+        self.sub_names_store     = MNTreeStore (data.values ())
+        self.choosen_names_view.set_model (self.choosen_names_store)
+        self.sub_names_view.set_model (self.sub_names_store)
 
 if __name__ == "__main__":
-    mnwin = MNGtkMain ()
-    mnwin.main()
+    mn= MNGUI()
+    gtk.main()
+
+#    mnwin = MNGtkMain ()
+#    mnwin.main()

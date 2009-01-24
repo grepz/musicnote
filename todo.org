@@ -1,11 +1,10 @@
 * Misc [0%]
   - [ ] Handle unicode carefully
   - [ ] Make more friendly on encodings different from CP1251, KOI8-R
-  - [ ] Check trees
 
-* Mechanism [0%]
-  1. [ ] Gather info from choosen directories into DB
-  2. [ ] Show this DB using curses interface
+* Mechanism [50%]
+  1. [X] Gather info from choosen directories into DB
+  2. [ ] Show this DB using GTK interface
   3. [ ] Repair tags in DB if choosen to do so
-  4. [ ] Copy files to storage directories fixing filenames if needed
+  4. [X] Copy files to storage directories fixing filenames if needed
 
