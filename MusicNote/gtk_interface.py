@@ -25,8 +25,6 @@ import pygtk
 
 pygtk.require('2.0')
 
-# just tests
-
 # So a typical drag-and-drop cycle would look as follows:
 #     * Drag begins. Source can get "drag-begin" signal.
 #       Can set up drag icon, etc.
@@ -47,12 +45,12 @@ class MNTreeView:
 
     def checkDNDSanity (self, model, source, dest, drop_pos):
         source_path = model.get_path(source)
-        target_path = model.get_path(dest)
-        target_len, source_len = len(target_path), len(source_path)
+        dest_path = model.get_path(dest)
+        target_len, source_len = len(dest_path), len(source_path)
 
         # If i am trying to drop element to the child node with the
         # same parent
-        if target_path[0] == source_path[0]:
+        if dest_path[0] == source_path[0]:
             return False
         # We can't drop elements into child nodes
         if target_len > 1 and \
@@ -67,13 +65,45 @@ class MNTreeView:
         
         return True
 
-    def __copy_data ():
-        pass
-    
-    # TODO: Handle copy and move, when source root node copied
-    # after/before childs of another root node, just copy childs of
-    # source node
-    def __onDragMotion (self, treeview, drag_context,
+    def __iter_is_child (self, model, iter):
+        if len (model.get_path (iter)) > 1:
+            return True
+        else:
+            return False
+
+    def __copy_data (self, treeview, model,
+                     source, dest, drop_pos):
+        # source is child
+        if self.__iter_is_child (model, source):
+            # in children list
+            if self.__iter_is_child (model, dest):
+                append_dest = model.iter_parent (dest)
+            # to root node
+            else:
+                # into root node
+                if drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_BEFORE or \
+                   drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_AFTER:
+                    append_dest = dest
+                # next to root node
+                else:
+                    append_dest = None        
+            model.append (append_dest, model[source])
+        # source is root
+        else:
+            if self.__iter_is_child (model, dest):
+                append_dest = model.iter_parent (dest)
+            else:
+                append_dest = dest
+            iter = model.iter_children(source)
+            while iter:
+                model.append (append_dest, model[iter])
+                model.remove(iter)
+                iter = model.iter_children(source)
+            model.append ((self.__iter_is_child (model, dest) and \
+                           [model.iter_parent (dest)] or \
+                           [dest])[0], model[source])
+                
+    def __drag_motion_cb (self, treeview, drag_context,
                         x, y, evtime):
         try:
             dest_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
@@ -89,13 +119,15 @@ class MNTreeView:
             treeview.enable_model_drag_dest (
                 [self.drop_no], gtk.gdk.ACTION_MOVE)
     
-    def __onDragDataReceived (self, treeview, drag_context, x, y,
+    def __drag_data_received_cb (self, treeview, drag_context, x, y,
                               selection_data, info, evtime):
-        target_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
+        dest_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
         model, source = treeview.get_selection().get_selected()
-        dest = model.get_iter(target_path)
+        dest = model.get_iter(dest_path)
         
         if self.checkDNDSanity (model, source, dest, drop_pos):
+            self.__copy_data (treeview, model,
+                              source, dest, drop_pos)
             drag_context.finish(True, True, evtime)
         else:
             drag_context.finish(False, False, evtime)
@@ -110,9 +142,9 @@ class MNTreeView:
         # Connect drag signal, they will check if we may put dragged
         # widget, or not
         treeview.connect ('drag-data-received',
-                          self.__onDragDataReceived)
+                          self.__drag_data_received_cb)
         treeview.connect ('drag-motion',
-                          self.__onDragMotion)
+                          self.__drag_motion_cb)
 
     def __init__ (self, treeview):
         self.__setup_dnd_rules(treeview)
@@ -136,7 +168,7 @@ class MNGtkMain:
     def test(self):
         self.categories = gtk.TreeStore(str)
 
-        for category in range (20):
+        for category in range (5):
             cat = self.categories.append(None, ['Row %d' % category])
             for element in range (5):
                 self.categories.append(cat, ['Child row %d' % element])
