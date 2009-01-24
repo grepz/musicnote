@@ -23,6 +23,8 @@ import gobject
 import gtk
 import pygtk
 
+## Test
+
 pygtk.require('2.0')
 
 # So a typical drag-and-drop cycle would look as follows:
