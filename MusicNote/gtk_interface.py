@@ -201,96 +201,180 @@ class MNGtkMain:
         self.test()
         gtk.main()
 
-class MNTreeStore (gtk.TreeStore):
+###############################################################################
+
+class MNError:
+    def __init__ (self, msg):
+        print msg
+        
+class MNListStore (gtk.ListStore):
     names_list = None
     
-    def __init__ (self, names_list):
+    def __init__ (self, names_list=None):
         # Chain costructor
-        gtk.TreeStore.__init__(self, str)
+        gtk.ListStore.__init__(self, str)
         self.names_list = names_list
-        i = 0
-        for name in names_list:
-            self.append(None, ['%d - %s' % (i, name)])
-            i += 1
+        
+        if names_list:    
+            for name in names_list:
+                self.append([name])
 
     def get_raw_list (self):
         return self.names_list
 
-###############################################################################
-        
-class MNGUIError:
-    def __init__ (self, msg):
-        print msg
+class DNDRules:
+    drop_yes = ('drop_yes', gtk.TARGET_SAME_WIDGET, 0)
+    drop_no = ('drop_no', gtk.TARGET_SAME_WIDGET, 0)
 
-class MNGUI:
-    glade = 'mn_main.glade'
-    winname = 'MNWindow'
-    toolbarname = 'MNToolBar'
+    # Callbacks
+    def __drag_motion_cb (self, treeview, drag_context,
+                          x, y, evtime):
+        pass
+    def __drag_data_received_cb (self, treeview, drag_context, x, y,
+                                 selection_data, info, evtime):
+        pass
+
+    ## ---------------------------------------
     
-    choosen_names_name = 'MNChoosenNamesView'
-    sub_names_name     = 'MNSubNamesView'
+    def __iter_is_child (self, model, iter):
+        if len (model.get_path (iter)) > 1:
+            return True
+        else:
+            return False
 
-    def destroy (self, widget, data=None):
-        print 'destroy event'
-        gtk.main_quit()
+    def __copy_data (self, treeview, model,
+                     source, dest, drop_pos):
+        pass
 
-    def __init_views (self):
-        self.choosen_names_view = self.wTree.get_widget (
-            self.choosen_names_name)
-        self.sub_names_view = self.wTree.get_widget (
-            self.sub_names_name)
+    def __setup_dnd_rules (self, treeview):
+        treeview.enable_model_drag_source (
+            gtk.gdk.BUTTON1_MASK, [self.drop_yes],
+            gtk.gdk.ACTION_MOVE)
+        treeview.enable_model_drag_dest (
+            [self.drop_yes], gtk.gdk.ACTION_MOVE)
 
-        def set_columns (view, name):
-            tvcolumn = gtk.TreeViewColumn(name)
-            view.append_column(tvcolumn)
+        # Connect drag signal, they will check if we may put dragged
+        # widget, or not
+        treeview.connect ('drag-data-received',
+                          self.__drag_data_received_cb)
+        treeview.connect ('drag-motion',
+                          self.__drag_motion_cb)
+        
+    def checkDNDSanity (self, model, source, dest, drop_pos):
+        return True
+    
+    def __init__ (self, treeview):
+        self.__setup_dnd_rules (treeview)
+
+class MNEditorElements (DNDRules):
+    
+    def __set_columns (self):
+            tvcolumn = gtk.TreeViewColumn(self.name)
+            self.treeview.append_column(tvcolumn)
             cell = gtk.CellRendererText()
             tvcolumn.pack_start(cell, True)
             tvcolumn.add_attribute(cell, 'text', 0)
 
-        # Choosen names
-        set_columns (self.choosen_names_view, 'Choosen')
-        # Sub names
-        set_columns (self.sub_names_view, 'Names')
+    def __fill_view (self):
+        self.liststore = MNListStore (self.data)
+        self.treeview.set_model (self.liststore)
+    
+    def __init__ (self, treeview, name):
+        DNDRules.__init__ (self, treeview)
+        self.name = name
+        self.treeview = treeview
+        self.__set_columns()
+        
+    def set_data (self, data):
+        self.data = data
+        self.__fill_view()
 
-    def __init_toolbar (self):
-        self.toolbar = self.wTree.get_widget (self.toolbarname)
+class MNGroupLeads (MNEditorElements):
+    pass
 
-    def __init_storage (self):
-        pass
+class MNLeadSubs (MNEditorElements):
+    pass
+
+class GroupsEditor:
+    group_leads = None
+    lead_subs   = None
+
+    data = None
+
+    def __init_views (self):
+        self.choosen_view = MNChoosenView (
+            self.wTree.get_widget (self.choosen_names_name),
+            'Categories names')
+        self.sub_view = MNSubView (
+            self.wTree.get_widget (self.sub_names_name),
+            'Sub elements names')
+    
+    def fill_with_data (self, data):
+        if data == None:
+            return
+        self.data = data
+        self.group_leads.set_data (data.keys())
+        
+    
+    def __init__ (self, group_leads_view, lead_subs_view,
+                  data=None):
+        self.group_leads = MNGroupLeads (
+            group_leads_view, 'Group leaders')
+        self.lead_subs = MNLeadSubs (
+            lead_subs_view, 'Group sub names')
+        
+    # Callbacks
+    def group_leads_activated_cb (self, treeview, path,
+                                  view_column, *data):
+        model, source = treeview.get_selection().get_selected()
+        self.lead_subs.set_data (
+            self.data[model.get_value (source, 0)])
+
+class MNGUI:
+    glade_file            = 'mn_main.glade'
+    main_window_gladename = 'MNMainWindow'
+    toolbar_gladename     = 'MNMainToolBar'
+    group_leads_gladename = 'MNGroupLeadsView'
+    lead_subs_gladename   = 'MNLeadSubsView'
+
+    main_window = None
+    groups_editor = None
+
+    def destroy (self, widget, data=None):
+        gtk.main_quit()
         
     def __init__ (self):
-        self.wTree = gtk.glade.XML (self.glade)
-        self.window = self.wTree.get_widget (self.winname)
-        assert(self.window)
+        # Widget tree from glade resource file
+        self.wTree = gtk.glade.XML (self.glade_file)
+        
+        self.main_window = self.wTree.get_widget (
+            self.main_window_gladename)
+        
+        self.groups_editor = GroupsEditor (
+            self.wTree.get_widget (self.group_leads_gladename),
+            self.wTree.get_widget (self.lead_subs_gladename))
+        
         self.cb = {
-            'handle_win_destroy' : self.destroy,
-            'handle_toolbar_quit' : self.destroy,
+            'handle_win_destroy'   : self.destroy,
+            'handle_toolbar_quit'  : self.destroy,
+            'group_lead_activated' : \
+                  self.groups_editor.group_leads_activated_cb,
         }
         self.wTree.signal_autoconnect (self.cb)
         
-        self.__init_toolbar ()
-        
-        self.__init_views ()
-        self.fill_views ({'name1' : ['value1', 'value2'],
-                          'name2' : ['value1', 'value2', 'value3'],
-                          'name3' : ['value1', 'value2', 'value3'],
-                          'name4' : ['value1', 'value2', 'value3']
-                          })
-        
-        self.window.show_all ()
+        self.main_window.show_all ()
 
-        self.__init_storage ()
-            
-        return
-
-    def fill_views (self, data):
-        self.choosen_names_store = MNTreeStore (data.keys ())
-        self.sub_names_store     = MNTreeStore (data.values ())
-        self.choosen_names_view.set_model (self.choosen_names_store)
-        self.sub_names_view.set_model (self.sub_names_store)
+    def connect_data (self, data):
+        """Put data to GUI through this function"""
+        self.groups_editor.fill_with_data(data)
 
 if __name__ == "__main__":
     mn= MNGUI()
+    mn.connect_data ({'name1' : ['value1', 'value2'],
+                      'name2' : ['value1', 'value2', 'value3'],
+                      'name3' : ['value1', 'value2', 'value3'],
+                      'name4' : ['value1', 'value2', 'value3']
+                      })
     gtk.main()
 
 #    mnwin = MNGtkMain ()

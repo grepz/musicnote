@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Jan 24 23:22:50 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Jan 25 03:23:41 2009 -->
 <glade-interface>
-  <widget class="GtkWindow" id="MNWindow">
+  <widget class="GtkWindow" id="MNMainWindow">
+    <property name="width_request">600</property>
+    <property name="height_request">400</property>
     <signal name="destroy" handler="handle_win_destroy"/>
     <child>
       <widget class="GtkVBox" id="MNMTopVBox">
         <property name="visible">True</property>
         <property name="spacing">2</property>
         <child>
-          <widget class="GtkToolbar" id="MNToolBar">
+          <widget class="GtkToolbar" id="MNMainToolBar">
             <property name="visible">True</property>
             <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
             <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
             <property name="icon_size_set">True</property>
             <child>
-              <widget class="GtkToolButton" id="MNTButtonQuit">
+              <widget class="GtkToolButton" id="MNMainToolbarQuit">
                 <property name="visible">True</property>
                 <property name="stock_id">gtk-quit</property>
                 <signal name="clicked" handler="handle_toolbar_quit"/>
@@ -30,20 +32,21 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkHPaned" id="MNHPaned">
+          <widget class="GtkHPaned" id="MNHMainPaned">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="border_width">2</property>
             <child>
-              <widget class="GtkScrolledWindow" id="MNCategoryScrolledWin">
+              <widget class="GtkScrolledWindow" id="MNGroupLeadsScrolledWin">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                 <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                 <child>
-                  <widget class="GtkTreeView" id="MNChoosenNamesView">
+                  <widget class="GtkTreeView" id="MNGroupLeadsView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="row_activated" handler="group_lead_activated"/>
                   </widget>
                 </child>
               </widget>
@@ -53,13 +56,13 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkScrolledWindow" id="MNCategoryElementsScrolledWin">
+              <widget class="GtkScrolledWindow" id="MNLeadSubsScrolledWin">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                 <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                 <child>
-                  <widget class="GtkTreeView" id="MNSubNamesView">
+                  <widget class="GtkTreeView" id="MNLeadSubsView">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                   </widget>
@@ -77,7 +80,7 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="MNStatusBar">
+          <widget class="GtkStatusbar" id="MNMainStatusBar">
             <property name="visible">True</property>
             <property name="spacing">2</property>
           </widget>
