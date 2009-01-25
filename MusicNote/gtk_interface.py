@@ -320,7 +320,9 @@ class DNDRules:
         self.__setup_dnd_rules (treeview)
 
 #class MNEditorElements (DNDRules):
-class MNEditorElements ():    
+class MNEditorElements ():
+    data = None
+    
     def __set_columns (self):
             tvcolumn = gtk.TreeViewColumn(self.name)
             self.treeview.append_column(tvcolumn)
@@ -328,7 +330,7 @@ class MNEditorElements ():
             tvcolumn.pack_start(cell, True)
             tvcolumn.add_attribute(cell, 'text', 0)
 
-    def __fill_view (self):
+    def fill_view (self):
         self.liststore = MNListStore (self.data)
         self.treeview.set_model (self.liststore)
     
@@ -339,20 +341,27 @@ class MNEditorElements ():
         self.__set_columns()
         
     def set_data (self, data):
-        self.data = data
-        self.__fill_view()
+        pass
 
 class MNGroupLeads (MNEditorElements):
-    pass
 #    target = ('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)
+    def set_data (self, data):
+        self.data = [x[0] for x in data]
+        self.fill_view ()
+
+    def change_element (self, old, new):
+        self.data = map (lambda x: (x == old and [new] or [x])[0], self.data)
+
 
 class MNLeadSubs (MNEditorElements):
     group_lead = None
+
+    def set_data (self, data):
+        self.data = filter (lambda x: x[0] == self.group_lead, data)[0][1]
+        self.fill_view ()
     
     def set_group_lead (self, lead):
         self.group_lead = lead
-    
-#    target = ('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)
     
 
 class GroupsEditor:
@@ -370,10 +379,8 @@ class GroupsEditor:
             'Sub elements names')
     
     def fill_with_data (self, data):
-        if data == None:
-            return
         self.data = data
-        self.group_leads.set_data (data.keys())
+        self.group_leads.set_data (data)
         
     
     def __init__ (self, group_leads_view, lead_subs_view,
@@ -388,20 +395,21 @@ class GroupsEditor:
                                   view_column, *data):
         model, source = treeview.get_selection().get_selected()
         value = model.get_value (source, 0)
-        self.lead_subs.set_data (
-            self.data[value])
+        
         self.lead_subs.set_group_lead (value)
+        self.lead_subs.set_data (self.data)
 
     def lead_subs_activated_cb (self, treeview, path,
                                 view_column, *data):
         model, source = treeview.get_selection().get_selected()
         value = model.get_value (source, 0)
-        
-        self.data[value] = self.data[self.lead_subs.group_lead]
-        del self.data[self.lead_subs.group_lead]
 
-        self.lead_subs.group_lead = value
-        self.fill_with_data(self.data[value])
+        self.data = map (lambda x: (x[0] == self.lead_subs.group_lead and \
+                                    [value, x[1]] or x),
+                         self.data)
+        self.lead_subs.set_group_lead (value)
+        self.group_leads.set_data(self.data)
+        self.group_leads.fill_view ()
 
 class MNGUI:
     glade_file            = 'mn_main.glade'
@@ -445,11 +453,12 @@ class MNGUI:
 
 if __name__ == "__main__":
     mn= MNGUI()
-    mn.connect_data ({'name1' : ['value1', 'value2'],
-                      'name2' : ['value1', 'value2', 'value3'],
-                      'name3' : ['value1', 'value2', 'value3'],
-                      'name4' : ['value1', 'value2', 'value3']
-                      })
+    mn.connect_data ([ ['Therion', ['Therrion', 'Tharion', 'Therion']],
+                       ['Зимовьё зверей', ['ЗЗ', 'Зимовьё', 'Зимовьё зверей',
+                                           'Зимовьё Зверей']],
+                       ['Дудук', ['Дудук_', 'Дудук', '_Дудук']],
+                       ['IN_FLAMES', ['In Flames', 'In_Flames', 'IN_FLAMES']]
+                      ])
     gtk.main()
 
 #    mnwin = MNGtkMain ()
