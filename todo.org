@@ -1,10 +1,18 @@
-* Misc [0%]
-  - [ ] Handle unicode carefully
+* Total [0%]
+  - [-] DB [50%]
+	1. [X] Gather info from choosen directories into sqlite3 DB
+	2. [ ] Manage DB with GUI
   - [ ] Make more friendly on encodings different from CP1251, KOI8-R
-
-* Mechanism [50%]
-  1. [X] Gather info from choosen directories into DB
-  2. [ ] Show this DB using GTK interface
-  3. [ ] Repair tags in DB if choosen to do so
-  4. [X] Copy files to storage directories fixing filenames if needed
+  - [-] GUI [33%]
+	1. [ ] Manage data using GUI
+	2. [X] Simple glade interface
+	3. [ ] Toolbar with control buttons
+  - [-] Files transfer [50%]
+	1. [ ] Filename by mask
+	2. [X] Copy files to storage directories fixing filenames if needed
+  - [-] Lexical [66%]
+	1. [X] Word distance
+	2. [X] Phrase total distance
+	3. [ ] Phrases scores
+  - [ ] Config file
 
