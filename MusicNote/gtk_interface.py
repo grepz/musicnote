@@ -34,20 +34,6 @@ except:
     print "Can't find python gtk bindings."
     exit(1)
 
-# So a typical drag-and-drop cycle would look as follows:
-#     * Drag begins. Source can get "drag-begin" signal.
-#       Can set up drag icon, etc.
-#     * Drag moves over a drop area. Destination can get "drag-motion" signal.
-#     * Drop occurs. Destination can get "drag-drop" signal.
-#       Destination should ask for source data.
-#     * Drag data request (when a drop occurs).
-#       Source can get "drag-data-get" signal.
-#     * Drop data received (may be on same or different application).
-#       Destination can get "drag-data-received" signal.
-#     * Drag data delete (if the drag was a move).
-#       Source can get "drag-data-delete" signal
-#     * Drag-and-drop procedure done. Source can receive "drag-end" signal.
-
 class MNTreeView:
     drop_yes = ('drop_yes', gtk.TARGET_SAME_WIDGET, 0)
     drop_no = ('drop_no', gtk.TARGET_SAME_WIDGET, 0)
@@ -222,17 +208,59 @@ class MNListStore (gtk.ListStore):
     def get_raw_list (self):
         return self.names_list
 
+# So a typical drag-and-drop cycle would look as follows:
+#     * Drag begins. Source can get "drag-begin" signal.
+#       Can set up drag icon, etc.
+#     * Drag moves over a drop area. Destination can get "drag-motion" signal.
+#     * Drop occurs. Destination can get "drag-drop" signal.
+#       Destination should ask for source data.
+#     * Drag data request (when a drop occurs).
+#       Source can get "drag-data-get" signal.
+#     * Drop data received (may be on same or different application).
+#       Destination can get "drag-data-received" signal.
+#     * Drag data delete (if the drag was a move).
+#       Source can get "drag-data-delete" signal
+#     * Drag-and-drop procedure done. Source can receive "drag-end" signal.
+    
 class DNDRules:
-    drop_yes = ('drop_yes', gtk.TARGET_SAME_WIDGET, 0)
-    drop_no = ('drop_no', gtk.TARGET_SAME_WIDGET, 0)
+    drop_yes = ('drop_yes', gtk.TARGET_SAME_APP, 0)
+    drop_no = ('drop_no', gtk.TARGET_SAME_APP, 0)
+    target = None
 
     # Callbacks
     def __drag_motion_cb (self, treeview, drag_context,
                           x, y, evtime):
-        pass
+        try:
+            dest_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
+        except:
+            return
+
+        model, source = treeview.get_selection().get_selected()
+        dest = model.get_iter(dest_path)
+        
+        if self.checkDNDSanity(model, source, dest, drop_pos):
+            treeview.enable_model_drag_dest (
+                [self.drop_yes], gtk.gdk.ACTION_MOVE)
+        else:
+            treeview.enable_model_drag_dest (
+                [self.drop_no], gtk.gdk.ACTION_MOVE)
+
     def __drag_data_received_cb (self, treeview, drag_context, x, y,
                                  selection_data, info, evtime):
-        pass
+        try:
+            dest_path, drop_pos = treeview.get_dest_row_at_pos(x, y)
+            model, source = treeview.get_selection().get_selected()
+            dest = model.get_iter(dest_path)
+        except:
+            return
+        
+        if self.checkDNDSanity (model, source, dest, drop_pos):
+            self.__copy_data (treeview, model,
+                              source, dest, drop_pos)
+            drag_context.finish(True, True, evtime)
+        else:
+            drag_context.finish(False, False, evtime)
+
 
     ## ---------------------------------------
     
@@ -247,11 +275,12 @@ class DNDRules:
         pass
 
     def __setup_dnd_rules (self, treeview):
-        treeview.enable_model_drag_source (
-            gtk.gdk.BUTTON1_MASK, [self.drop_yes],
-            gtk.gdk.ACTION_MOVE)
-        treeview.enable_model_drag_dest (
-            [self.drop_yes], gtk.gdk.ACTION_MOVE)
+        treeview.enable_model_drag_source (gtk.gdk.BUTTON1_MASK,
+                                           [self.target],
+                                           gtk.gdk.ACTION_DEFAULT|
+                                           gtk.gdk.ACTION_MOVE)
+        treeview.enable_model_drag_dest ([self.target],
+                                         gtk.gdk.ACTION_DEFAULT)
 
         # Connect drag signal, they will check if we may put dragged
         # widget, or not
@@ -261,13 +290,37 @@ class DNDRules:
                           self.__drag_motion_cb)
         
     def checkDNDSanity (self, model, source, dest, drop_pos):
-        return True
+        try:
+            source_path = model.get_path(source)
+            dest_path = model.get_path(dest)
+            target_len, source_len = len(dest_path), len(source_path)
+        except:
+            return False
+        
+        return False
+#         # If i am trying to drop element to the child node with the
+#         # same parent
+#         if dest_path[0] == source_path[0]:
+#             return False
+#         # We can't drop elements into child nodes
+#         if target_len > 1 and \
+#                (drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_BEFORE or \
+#                 drop_pos == gtk.TREE_VIEW_DROP_INTO_OR_AFTER):
+#             return False
+#         # Root nodes can't be simply reordered
+#         if (target_len == 1 and source_len == 1) and \
+#                drop_pos == gtk.TREE_VIEW_DROP_BEFORE or \
+#                drop_pos == gtk.TREE_VIEW_DROP_AFTER:
+#             return False
+        
+#        return True
+
     
     def __init__ (self, treeview):
         self.__setup_dnd_rules (treeview)
 
-class MNEditorElements (DNDRules):
-    
+#class MNEditorElements (DNDRules):
+class MNEditorElements ():    
     def __set_columns (self):
             tvcolumn = gtk.TreeViewColumn(self.name)
             self.treeview.append_column(tvcolumn)
@@ -280,7 +333,7 @@ class MNEditorElements (DNDRules):
         self.treeview.set_model (self.liststore)
     
     def __init__ (self, treeview, name):
-        DNDRules.__init__ (self, treeview)
+#        DNDRules.__init__ (self, treeview)
         self.name = name
         self.treeview = treeview
         self.__set_columns()
@@ -291,9 +344,16 @@ class MNEditorElements (DNDRules):
 
 class MNGroupLeads (MNEditorElements):
     pass
+#    target = ('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)
 
 class MNLeadSubs (MNEditorElements):
-    pass
+    group_lead = None
+    
+    def set_group_lead (self, lead):
+        self.group_lead = lead
+    
+#    target = ('MY_TREE_MODEL_ROW', gtk.TARGET_SAME_WIDGET, 0)
+    
 
 class GroupsEditor:
     group_leads = None
@@ -327,8 +387,21 @@ class GroupsEditor:
     def group_leads_activated_cb (self, treeview, path,
                                   view_column, *data):
         model, source = treeview.get_selection().get_selected()
+        value = model.get_value (source, 0)
         self.lead_subs.set_data (
-            self.data[model.get_value (source, 0)])
+            self.data[value])
+        self.lead_subs.set_group_lead (value)
+
+    def lead_subs_activated_cb (self, treeview, path,
+                                view_column, *data):
+        model, source = treeview.get_selection().get_selected()
+        value = model.get_value (source, 0)
+        
+        self.data[value] = self.data[self.lead_subs.group_lead]
+        del self.data[self.lead_subs.group_lead]
+
+        self.lead_subs.group_lead = value
+        self.fill_with_data(self.data[value])
 
 class MNGUI:
     glade_file            = 'mn_main.glade'
@@ -359,6 +432,8 @@ class MNGUI:
             'handle_toolbar_quit'  : self.destroy,
             'group_lead_activated' : \
                   self.groups_editor.group_leads_activated_cb,
+            'lead_subs_activated'  : \
+            self.groups_editor.lead_subs_activated_cb
         }
         self.wTree.signal_autoconnect (self.cb)
         
