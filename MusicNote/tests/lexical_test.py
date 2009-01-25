@@ -37,7 +37,8 @@ class PhraseCheck (unittest.TestCase):
     def testWordPositions (self):
         print "Running words position in phrases test"
         for res, phrases in self.pos_cases:
-            test = ' '.join(transform_phrase (phrases[0], phrases[1]))
+            lst1, lst2 = phrases_to_lists(phrases[0], phrases[1])
+            test = ' '.join(reposition_list (lst1, lst2))
             print ("'%s':'%s'") % (test, res)
             self.assertEqual(res, test)
 

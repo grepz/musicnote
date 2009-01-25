@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 #  lexical.py -- ondisk Music data crawler with a number of features
@@ -36,6 +35,35 @@ def find_min (entity, lst):
 
     return _find_min (entity, lst[1:], score)
 
+rus_utf8_trans_table = {
+    u'а'  :  'a',    u'б'  :  'b',
+    u'в'  :  'v',    u'г'  :  'g',
+    u'д'  :  'd',    u'е'  :  'e',
+    u'ё'  :  'yo',   u'ж'  :  'zh',
+    u'з'  :  'z',    u'и'  :  'i',
+    u'й'  :  'j',    u'к'  :  'k',
+    u'л'  :  'l',    u'м'  :  'm',
+    u'н'  :  'n',    u'о'  :  'o',
+    u'п'  :  'p',    u'р'  :  'r',
+    u'с'  :  's',    u'т'  :  't',
+    u'у'  :  'u',    u'ф'  :  'f',
+    u'х'  :  'h',    u'ц'  :  'c',
+    u'ч'  :  'ch',   u'ш'  :  'sh',
+    u'щ'  :  'sch',  u'ь'  :  '\'',
+    u'ы'  :  'y',    u'э'  :  '`e',
+    u'ю'  :  'yu',   u'я'  :  'ya'
+    }
+
+def translit_str (string):
+    res = ''
+    for x in string:
+        x = x.lower()
+        if x in rus_utf8_trans_table:
+            res += rus_utf8_trans_table[x]
+        else:
+            res += x
+    return res
+
 def lev_distance(word1, word2, ignorecase=False):
     '''Find distance between words, used to guess errors between
     tags of the same entity
@@ -68,12 +96,17 @@ def total_phrase_diff (phrase1, phrase2):
                   map(lambda x,y: lev_distance(x,y),
                       lst1, lst2))
 
-# TODO: Optimize, too many lists and iterations.
-def transform_phrase (phr1, phr2):
+def phrases_to_lists (phr1, phr2):
     match = re.compile('[^\w]+', re.UNICODE)
     lst1, lst2 = stretch_list (match.split(phr1),
                                match.split(phr2))
-    lng = len(lst1)
+    return lst1, lst2
+
+# TODO: Optimize, too many lists and iterations.
+#def transform_phrase (phr1, phr2):
+def reposition_list (lst1, lst2):
+    lng = len (lst1)
+    assert (lng == len (lst2))
     res_lst = [''] * lng
 
     # Simplier way to sort differences?
@@ -110,31 +143,24 @@ def transform_phrase (phr1, phr2):
 
     return res_lst
 
-rus_utf8_trans_table = {
-    u'а'  :  'a',    u'б'  :  'b',
-    u'в'  :  'v',    u'г'  :  'g',
-    u'д'  :  'd',    u'е'  :  'e',
-    u'ё'  :  'yo',   u'ж'  :  'zh',
-    u'з'  :  'z',    u'и'  :  'i',
-    u'й'  :  'j',    u'к'  :  'k',
-    u'л'  :  'l',    u'м'  :  'm',
-    u'н'  :  'n',    u'о'  :  'o',
-    u'п'  :  'p',    u'р'  :  'r',
-    u'с'  :  's',    u'т'  :  't',
-    u'у'  :  'u',    u'ф'  :  'f',
-    u'х'  :  'h',    u'ц'  :  'c',
-    u'ч'  :  'ch',   u'ш'  :  'sh',
-    u'щ'  :  'sch',  u'ь'  :  '\'',
-    u'ы'  :  'y',    u'э'  :  '`e',
-    u'ю'  :  'yu',   u'я'  :  'ya'
-    }
 
-def translit_str (string):
-    res = ''
-    for x in string:
-        x = x.lower()
-        if x in rus_utf8_trans_table:
-            res += rus_utf8_trans_table[x]
-        else:
-            res += x
-    return res
+def filter_phrases (phr1, phr2):
+    lst1, lst2 = phrases_to_lists (phr1, phr2)
+    lst1 = reposition_list (lst1, lst2)
+    res = 0
+    for x, y in zip(lst1, lst2):
+        res += lev_distance (x, y, ignorecase=True)
+    if res <= len(lst1) * 2:
+        return True
+    else:
+        return False
+
+def assemble_groups (raw_list):
+    res = []
+    for i,x  in enumerate (raw_list):
+        res += [filter (lambda y: filter_phrases(x, y), raw_list)]
+        print res
+    print res
+
+#assemble_groups (["Therion singing", "THERION sings", "In Flames"])
+    
