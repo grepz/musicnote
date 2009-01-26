@@ -17,7 +17,7 @@ class WordCheck (unittest.TestCase):
                   ((3, 3),  ('stubburn',  'tsuburn')))
     
     def testWordDiffs (self):
-        print "Running words diff test"
+        print 'Running words diff test'
         for diff, words in self.diff_cases:
             print (words,
                    lev_distance(words[0], words[1]),
@@ -35,11 +35,11 @@ class PhraseCheck (unittest.TestCase):
                     u'я пишу неправильно с ошибками')))
     
     def testWordPositions (self):
-        print "Running words position in phrases test"
+        print 'Running words position in phrases test'
         for res, phrases in self.pos_cases:
             lst1, lst2 = phrases_to_lists(phrases[0], phrases[1])
             test = ' '.join(reposition_list (lst1, lst2))
-            print ("'%s':'%s'") % (test, res)
+            print ('"%s":"%s"') % (test, res)
             self.assertEqual(res, test)
 
     def testErrorCorrecting (self):

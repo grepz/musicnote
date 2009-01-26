@@ -29,26 +29,24 @@ def d_print (verbose, fmt, *values):
 
 def cycle_list (lst, dir=1):
     '''Cycle list by one element to the dir, where dir == 1 means to
-    the right, everything else - to the left
-    '''
+    the right, everything else - to the left'''
     if dir == 1:
         return [lst[len(lst) - 1]] + lst[:len(lst) - 1]
     else:
         return lst[1:] + [lst[0]]
 
-def stretch_list (lst1, lst2):
-    '''Stretch lesser list to it\'s bigger brother, fill with None empty
-    cells
-    '''
+def stretch_list (lst1, lst2, fill=None):
+    '''Stretch lesser list to it\'s bigger brother, fill with fill
+    empty cells'''
     if len(lst1) < len(lst2):
-        lst1 = lst1 + [None]*(len(lst2) - len(lst1))
+        lst1 = lst1 + [fill]*(len(lst2) - len(lst1))
     elif len(lst2) < len(lst1):
-        lst2 = lst2 + [None]*(len(lst1) - len(lst2))
+        lst2 = lst2 + [fill]*(len(lst1) - len(lst2))
 
     return lst1, lst2
 
 def transpose (m):
-    'Transpose square matrix'
+    '''Transpose square matrix'''
     lng = len(m)
     m_t = []
     for j in range(lng):

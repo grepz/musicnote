@@ -33,7 +33,7 @@ try:
     from mutagen.mp3 import MP3
     from mutagen.easyid3 import EasyID3
 except:
-    print "Can't find Mutagen library."
+    print 'Can\'t find Mutagen library'
     exit(1)
 
 # Here we define routines to store parsed meta data
@@ -91,8 +91,7 @@ def isMedia(x):
 
 # TODO: Check unicode with type()
 def check_tags_exists (probe, prot):
-    '''Check if tags in prototype exists in probe
-    '''
+    '''Check if tags in prototype exists in probe'''
     if [k for k in prot if k not in probe]:
         return False
     return True
@@ -194,8 +193,7 @@ def Usage ():
     -f|--repairfiles  - Repair file names
     -h|--help         - Show this text
     -b|--filldatabase - Set encoding
-    -v|--verbose      - Verbose output
-    ''' % sys.argv[0]
+    -v|--verbose      - Verbose output''' % sys.argv[0]
     exit(0)
 
 def main (argv):
@@ -239,7 +237,7 @@ FillDB: %s''', repair_tags, repair_filenames, fill_database)
     if fill_database:
         meta_store  = storage.MetaDBStorage()
     if repair_filenames:
-        cache_store = MusicStorage("/tmp/musicdir", drop=False)
+        cache_store = MusicStorage('/tmp/musicdir', drop=False)
     for directory in args:
         ParseMediaFiles(directory)
 

@@ -31,7 +31,7 @@ try:
     import gtk
     import gtk.glade
 except:
-    print "Can't find python gtk bindings."
+    print 'Can\'t find python gtk bindings.'
     exit(1)
 
 ###############################################################################
@@ -297,10 +297,10 @@ class MNGUI:
         self.main_window.show_all ()
 
     def connect_data (self, data):
-        """Put data to GUI through this function"""
+        '''Put data to GUI through this function'''
         self.groups_editor.fill_with_data(data)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     mn= MNGUI()
     mn.connect_data ([ ['Therion', ['Therrion', 'Tharion', 'Therion']],
                        ['Зимовьё зверей', ['ЗЗ', 'Зимовьё', 'Зимовьё зверей',

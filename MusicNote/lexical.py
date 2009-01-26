@@ -23,6 +23,7 @@ import re, sys
 from tools import *
 
 def find_min (entity, lst):
+    '''Find minimal distance of word in list of words'''
     score = lev_distance (entity, lst[0])
 
     def _find_min (entity, lst, score):
@@ -54,7 +55,10 @@ rus_utf8_trans_table = {
     u'ю'  :  'yu',   u'я'  :  'ya'
     }
 
+# TODO: Rewrite this function, make it fore usefull (Case condition
 def translit_str (string):
+    '''Transform utf-8 string of russian symbols to latin, by
+    transliting them'''
     res = ''
     for x in string:
         x = x.lower()
@@ -64,10 +68,17 @@ def translit_str (string):
             res += x
     return res
 
+def phrases_to_lists (phr1, phr2):
+    '''Transform phrases to lists, make this lists of the same length'''
+    match = re.compile('[^\w]+', re.UNICODE)
+    lst1, lst2 = stretch_list (match.split(phr1),
+                               match.split(phr2),
+                               fill=' ')
+    return lst1, lst2
+
 def lev_distance(word1, word2, ignorecase=False):
     '''Find distance between words, used to guess errors between
-    tags of the same entity
-    '''
+    tags of the same entity'''
     if ignorecase:
         word1, word2 = word1.upper(), word2.upper()
     n, m = len(word1), len(word2)
@@ -87,24 +98,20 @@ def lev_distance(word1, word2, ignorecase=False):
             
     return current_row[n]
 
-def total_phrase_diff (phrase1, phrase2):
-    match = re.compile('[^\w]+', re.UNICODE)
-    lst1, lst2 = stretch_list (match.split(phrase1),
-                               match.split(phrase2))
+def total_phrase_diff (phr1, phr2):
+    '''Calculate distance of every word in both phrases, then
+    calculate sum of differences'''
+    lst1, lst2 = phrases_to_lists (phr1, phr2)
     
     return reduce(lambda x,y: x + y,
                   map(lambda x,y: lev_distance(x,y),
                       lst1, lst2))
 
-def phrases_to_lists (phr1, phr2):
-    match = re.compile('[^\w]+', re.UNICODE)
-    lst1, lst2 = stretch_list (match.split(phr1),
-                               match.split(phr2))
-    return lst1, lst2
-
 # TODO: Optimize, too many lists and iterations.
 #def transform_phrase (phr1, phr2):
 def reposition_list (lst1, lst2):
+    '''Find closest words of lst1 and lst2 and reposition them in lst1
+    to correspond each other'''
     lng = len (lst1)
     assert (lng == len (lst2))
     res_lst = [''] * lng
@@ -143,24 +150,42 @@ def reposition_list (lst1, lst2):
 
     return res_lst
 
+def calculate_diff_score ():
+    pass
 
 def filter_phrases (phr1, phr2):
+    ''' Return True if phrases match against each other, score is
+    calculated to guess the match condition'''
     lst1, lst2 = phrases_to_lists (phr1, phr2)
     lst1 = reposition_list (lst1, lst2)
     res = 0
     for x, y in zip(lst1, lst2):
         res += lev_distance (x, y, ignorecase=True)
+    # TODO: Need to figure out how to calculate score
     if res <= len(lst1) * 2:
         return True
     else:
         return False
 
 def assemble_groups (raw_list):
-    res = []
-    for i,x  in enumerate (raw_list):
-        res += [filter (lambda y: filter_phrases(x, y), raw_list)]
-        print res
-    print res
+    '''Assemble similar phrases in groups, first phrase is phrase
+    group leader'''
+    def _assemble_groups (x, raw_list):
+        if raw_list:
+            # Restack elements, parse every element in list, and
+            # concatenate it with matched phrases
+            return _assemble_groups (
+                x + [[raw_list[:1][0],
+                      filter (lambda y: \
+                              filter_phrases(raw_list[:1][0],y),raw_list[1:])]],
+                raw_list[1:])
+        else:
+            return x
+    return _assemble_groups ([], raw_list)
 
-#assemble_groups (["Therion singing", "THERION sings", "In Flames"])
-    
+#print assemble_groups (["Therion singing",
+#                        "THERION singing",
+#                        "Therion sinnng",
+#                        "In Flames",
+#                        "fdsfsdfsdf",
+#                        "Thir sinnng"])

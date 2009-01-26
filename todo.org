@@ -1,4 +1,4 @@
-* Total [0%]
+* MusicNote [0%]
   - [-] DB [50%]
 	1. [X] Gather info from choosen directories into sqlite3 DB
 	2. [ ] Manage DB with GUI
@@ -10,11 +10,30 @@
   - [-] Files transfer [50%]
 	1. [ ] Filename by mask
 	2. [X] Copy files to storage directories fixing filenames if needed
-  - [-] Lexical [66%]
+  - [-] Lexical [80%]
 	1. [X] Word distance
 	2. [X] Phrase total distance
-	3. [ ] Phrases scores
-  - [ ] Config file
+	3. [X] Simple Phrases scores
+	4. [X] Phrases grouping(assembling)
+	5. [ ] Tweak algorithm [0%]
+	       - [ ] Weight of reposition of word
+	       - [ ] Weight of error in word, depends on number of
+                     symbols in word
+	       - [ ] Final score depends on phrase length
+	       - [ ] Liquidity of words reposition, based on jumps needed
+                     to reposition
+	       - [ ] Words concatenation and separation??
   - [ ] Media parsing [0%]
 	1. [ ] Fallback from easy mode of mutagen
-
+	2. [ ] mp3->ogg|ogg->mp3 conversion
+  - [ ] Standalone daemon [0%]
+	1. [ ] Sync with another daemon, gathering data from DB and
+               updating storage if something is missing.
+	2. [ ] Choose what to 'share' amongst daemons
+  - [ ] Config file [0%]
+	1. [ ] Encoding
+	2. [ ] DB
+	3. [ ] GUI ??
+	4. [ ] Files transformation
+	5. [ ] Lexical
+	6. [ ] Media parsing

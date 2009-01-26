@@ -56,7 +56,7 @@ class MusicStorageInterface ():
         try:
             make_dir_r(path[:path.rindex('/')])
         except (ValueError):
-            print ("Seems strange path to me: %s" % path)
+            print ('Seems strange path to me: %s' % path)
             return False
         return True
     
@@ -79,8 +79,7 @@ class MusicStorageInterface ():
         return self.__make_media_filepath (tags, ext)
 
     def cache_file (self, src, dst, move=False):
-        """Dummy functyion
-        """
+        '''Dummy functyion'''
         if os.path.exists (dst):
             return
         if move:
@@ -99,7 +98,7 @@ class MusicStorage(MusicStorageInterface):
             
     def __dropStorage(self):
         if os.path.isdir(self.storage_dir):
-            print "Deleting dir ", self.storage_dir
+            print 'Deleting dir ', self.storage_dir
             delete_dir (self.storage_dir)
         
     def __init__(self, dir, drop=True):
