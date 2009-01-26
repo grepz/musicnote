@@ -15,4 +15,6 @@
 	2. [X] Phrase total distance
 	3. [ ] Phrases scores
   - [ ] Config file
+  - [ ] Media parsing [0%]
+	1. [ ] Fallback from easy mode of mutagen
 

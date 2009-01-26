@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 #  music_note.py -- ondisk Music data crawler with a number of features
@@ -27,11 +26,15 @@ import string
 import os, os.path
 import getopt
 
-import mutagen
-from mutagen.mp3 import MP3
-from mutagen.easyid3 import EasyID3
-
 import encutils
+
+try:
+    import mutagen
+    from mutagen.mp3 import MP3
+    from mutagen.easyid3 import EasyID3
+except:
+    print "Can't find Mutagen library."
+    exit(1)
 
 # Here we define routines to store parsed meta data
 import storage
