@@ -64,7 +64,7 @@ enc_to   = 'iso-8859-1'
 
 # Target directory
 # TODO: Make platform independent all path handling
-target_dir = '/tmp/music'
+target_dir = '/home/esgal/tmp/music'
 
 # mp3 tags to ordianry tags conversion
 id3_tags = { 'TIT2' : 'title',
@@ -155,7 +155,7 @@ def getTags (media):
     return info
 
 def ParseMediaFiles (dirname, filters=None):
-    global meta_store, cache_store, repair_tags, verbose
+    global meta_store, cache_store, repair_tags, verbose, target_dir
     if filters:
         allowed = re.compile(filters).search
     else:
@@ -200,6 +200,7 @@ def main (argv):
     global meta_store, cache_store
     global repair_tags, repair_filenames, fill_database
     global verbose
+    global target_dir
     
     try:
         opts, args = getopt.getopt(argv, 'hvtfbd:e:',
@@ -237,7 +238,7 @@ FillDB: %s''', repair_tags, repair_filenames, fill_database)
     if fill_database:
         meta_store  = storage.MetaDBStorage()
     if repair_filenames:
-        cache_store = MusicStorage('/tmp/musicdir', drop=False)
+        cache_store = MusicStorage(target_dir, drop=False)
     for directory in args:
         ParseMediaFiles(directory)
 

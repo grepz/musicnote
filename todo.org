@@ -26,6 +26,7 @@
   - [ ] Media parsing [0%]
 	1. [ ] Fallback from easy mode of mutagen
 	2. [ ] mp3->ogg|ogg->mp3 conversion
+	3. [ ] Make list of none parseble files
   - [ ] Standalone daemon [0%]
 	1. [ ] Sync with another daemon, gathering data from DB and
                updating storage if something is missing.
