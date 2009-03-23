@@ -123,8 +123,8 @@ class MetaDBStorage():
         self.store    = Store(self.database)
         self.__createTables()
 
-    def __init__(self, storage_path=DEF_STORAGE_PATH, db_name=DEF_DB_NAME):
-        self.db_path = os.path.join(storage_path, db_name)
+    def __init__(self, db_path):
+        self.db_path = db_path
         self.__initStorage()
 
     def __AddArtist (self, artist_name):
