@@ -19,16 +19,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with musicnote.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO:
-# 1. Check if files are converted/translated/moved, if not, signal(log file,
-#    stdout)
-# 2. Merge music titles(graphical/console interface)
-# 3. File transmormation format
-# 4. Choose what tags to repair
-# 5. Check for bugs, legion is their name. :)
-# 6. Complete GUI design and implementation
-# 7. Extend tags
-
 import sys
 #import traceback
 import re
@@ -36,6 +26,46 @@ import locale
 import string
 import os, os.path
 import getopt
+
+from stat import *
+
+# Media storage, implemented as sqlite3 db
+meta_store  = None
+# Cache, where all files goes
+cache_store = None
+
+# Command line options
+repair_tags       = False
+repair_filenames  = False
+fill_database     = False
+verbose           = False
+
+# Encodings used
+enc_from = 'CP1251'
+enc_to   = 'iso-8859-1'
+
+# Target directory
+target_dir = None
+# Database path
+db_path = None
+
+# Log file related
+log_file       = "/tmp/musicnote.log"
+unparsed_files = "/tmp/musicnote_unparsed.log"
+
+# mp3 tags to ordianry tags conversion
+id3_tags = { 'TIT2' : 'title',
+             'TPE1' : 'artist',
+             'TALB' : 'album' }
+
+# Default values for tags
+conv_tags = { 'artist' : u'Unknown',
+              'album'  : u'Unknown',
+              'title'  : u'Unknown' }
+
+##########################################################
+
+ENCODING = locale.getpreferredencoding()
 
 try:
     import encutils
@@ -58,39 +88,39 @@ except ImportError, err:
     print "Error while importing. %s" % err
     exit(1)
 
-# Media storage, implemented as sqlite3 db
-meta_store  = None
-# Cache, where all files goes
-cache_store = None
 
-# Command line options
-repair_tags       = False
-repair_filenames  = False
-fill_database     = False
-verbose           = False
+def fsize_print(sz):
+    for st,nm in [(1<<50L, 'P'), (1<<40L, 'T'),
+                  (1<<30L, 'G'), (1<<20L, 'M'),
+                  (1<<10L, 'K'), (1, '')]:
+        if sz > st:
+            break
 
-ENCODING = locale.getpreferredencoding()
+    return str(int(sz/st)) + nm
 
-# Encodings used
-enc_from = 'CP1251'
-enc_to   = 'iso-8859-1'
+class MediaStat ():
+    unparsed_sz = 0
+    parsed_sz   = 0
+    total_sz    = 0
 
-# Target directory
-target_dir = None
-# Database path
-db_path = None
+    def GrowSize(self, stat_type, filename):
+        if not S_ISREG(os.stat(filename)[ST_MODE]):
+            raise Exception('MediaStat', 'Is not a regular file: ' + filename)
 
-# mp3 tags to ordianry tags conversion
-id3_tags = { 'TIT2' : 'title',
-             'TPE1' : 'artist',
-             'TALB' : 'album' }
+        sz = os.stat(filename)[ST_SIZE]
+        if stat_type == 0:
+            self.parsed_sz += sz
+        elif stat_type == 1:
+            self.unparsed_sz += sz
+        else:
+            raise Exception('MediaStat', 'Unknown stat type: ' + stat_type)
 
-# Default values for tags
-conv_tags = { 'artist' : u'Unknown',
-              'album'  : u'Unknown',
-              'title'  : u'Unknown' }
+        self.total_sz += sz
 
-##########################################################
+    def PrintStat(self):
+        print "Unparsed size: " + fsize_print(self.unparsed_sz)
+        print "Parsed size: "   + fsize_print(self.parsed_sz)
+        print "Total: "         + fsize_print(self.unparsed_sz + self.parsed_sz)
 
 def isascii(string):
     return not string or min(string) < '\x127'
@@ -168,17 +198,28 @@ def getTags (media):
             info[tag] = media[tag][0]
     return info
 
-def ParseMediaFiles (dirname, filters=None):
+def ParseMediaFiles (dirname, m_stat=None, filters=None):
     global meta_store, cache_store, repair_tags, verbose, target_dir
     if filters:
         allowed = re.compile(filters).search
     else:
         allowed = lambda x: 1
+
+    unparsed = open(unparsed_files, "w")
+        
     for root, dirs, files in os.walk(dirname):
         files = [filename for filename in files if allowed(filename)]
         for filename in map(lambda x: os.path.join(root, x), files):
             media = isMedia(filename)
-            if not media: continue
+            if not media:
+                unparsed.write(filename + "\n")
+                if m_stat:
+                    m_stat.GrowSize(1, filename)
+                continue
+
+            if m_stat:
+                m_stat.GrowSize(0, filename)
+            
             print filename
             # If mp3 convert tags names to ogg like
             if media.mime[0] == 'audio/mp3':
@@ -198,6 +239,8 @@ def ParseMediaFiles (dirname, filters=None):
             if fill_database:
                 d_print (verbose, 'Tags %s to DB' % tags)
                 meta_store.AddData(tags)
+    
+    unparsed.close()
 
 ########################################
 
@@ -208,7 +251,7 @@ def Usage ():
     -d|--targetdir    - Target directory
     -e|--encoding     - Default FROM encoding
     -h|--help         - Show this text
-    -b|--filldatabase - Set encoding
+    -b|--filldatabase - Create sqlite DB file
     -s|--dbpath       - Path where sqlite DB will be created
     -v|--verbose      - Verbose output''' % sys.argv[0]
     exit(0)
@@ -216,9 +259,8 @@ def Usage ():
 def main (argv):
     global meta_store, cache_store
     global repair_tags, repair_filenames, fill_database
-    global verbose
-    global target_dir
-    global db_path
+    global verbose, target_dir, db_path
+    global log_file, unparsed_files
     
     try:
         opts, args = getopt.getopt(argv, 'hvtfbd:e:s:',
@@ -259,16 +301,21 @@ Warning. Do not choose the same directory, where original files lies!'''
         print '''Set database path.'''
         exit(1)
 
+    m_stat = MediaStat()
+        
     d_print (verbose, 'Directories selected: %s', args)
     d_print (verbose, '''Repair tags: %s
 Repair files: %s
 FillDB: %s''', repair_tags, repair_filenames, fill_database)
+    
     if fill_database:
         meta_store  = storage.MetaDBStorage(db_path)
     if repair_filenames:
         cache_store = MusicStorage(target_dir, drop=False)
     for directory in args:
-        ParseMediaFiles(directory)
+        ParseMediaFiles(directory, m_stat=m_stat)
+
+    m_stat.PrintStat()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
